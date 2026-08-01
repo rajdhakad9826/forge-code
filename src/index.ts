@@ -1,8 +1,6 @@
-import { chat } from "./llm/chat.js";
+import program from "./cli/index.js"
 
 async function main() {
-    const prompt = "Hello!";
-    const response = await chat(prompt);
-    console.log(response);
+    program.parse();
 }
 main();
