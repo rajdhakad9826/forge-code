@@ -13,8 +13,7 @@ program
     .command('chat <prompt>')
     .description('Send a prompt to the AI and print the response')
     .action(async (prompt) => {
-        const response = await chat(prompt);
-        console.log(response)
+        await chat(prompt);
     });
 
 export default program;
