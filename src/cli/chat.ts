@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
-import { chat } from "../llm/chat.js";
+import { generate } from "../llm/generate.js";
 
 const SYSTEM_PROMPT = "You are a helpful assistant.";
 
@@ -28,7 +28,7 @@ export async function startChat(initialPrompt: string) {
 
     if (initialPrompt) {
         conversation.push({ "role": "user", content: initialPrompt })
-        const assistantMessage = await chat(conversation);
+        const assistantMessage = await generate(conversation);
         if (typeof assistantMessage === "string")
             conversation.push({ role: "assistant", content: assistantMessage })
 
@@ -37,7 +37,7 @@ export async function startChat(initialPrompt: string) {
     while (true) {
         const prompt = await rl.question("❯ ")
         conversation.push({ "role": "user", content: prompt })
-        const assistantMessage = await chat(conversation);
+        const assistantMessage = await generate(conversation);
         if (typeof assistantMessage === "string")
             conversation.push({ role: "assistant", content: assistantMessage })
     }
