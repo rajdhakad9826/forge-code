@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { chat } from "../llm/chat.js";
-
+import { startChat } from "./chat.js";
 const program = new Command();
 
 program
@@ -10,10 +9,9 @@ program
     .version('1.0.0');
 
 program
-    .command('chat <prompt>')
+    .command('chat')
     .description('Send a prompt to the AI and print the response')
-    .action(async (prompt) => {
-        await chat(prompt);
-    });
+    .argument('[prompt]')
+    .action(async (prompt) => startChat(prompt));
 
 export default program;
