@@ -1,8 +1,9 @@
 import OpenAI from "openai";
 import { client } from "./client.js";
+import type { Message } from "./types.js";
 const MODEL = "openai/gpt-oss-120b";
 
-export async function generate(conversation: OpenAI.Responses.ResponseInput) {
+export async function generate(conversation: Message[]) {
     process.stdout.write("Thinking...\n");
     const stream = await client.responses.create({
         model: MODEL,

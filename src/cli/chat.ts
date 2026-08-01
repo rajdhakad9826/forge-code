@@ -2,13 +2,14 @@ import OpenAI from "openai";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 import { generate } from "../llm/generate.js";
+import type { Message } from "../llm/types.js";
 
 const SYSTEM_PROMPT = "You are a helpful assistant.";
 
 
 export async function startChat(initialPrompt: string) {
 
-    const conversation: OpenAI.Responses.ResponseInput = [
+    const conversation: Message[] = [
         { role: "system" as const, content: SYSTEM_PROMPT },
     ]
 
