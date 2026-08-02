@@ -2,14 +2,14 @@ import OpenAI from "openai";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 import { generate } from "../llm/generate.js";
-import type { Message } from "../llm/types.js";
+import type { ConversationItem } from "../llm/types.js";
 
 const SYSTEM_PROMPT = "You are a helpful assistant.";
 
 
 export async function startChat(initialPrompt: string) {
 
-    const conversation: Message[] = [
+    const conversation: ConversationItem[] = [
         { role: "system" as const, content: SYSTEM_PROMPT },
     ]
 
@@ -29,17 +29,26 @@ export async function startChat(initialPrompt: string) {
 
     if (initialPrompt) {
         conversation.push({ "role": "user", content: initialPrompt })
-        const assistantMessage = await generate(conversation);
-        if (typeof assistantMessage === "string")
-            conversation.push({ role: "assistant", content: assistantMessage })
-
+        console.log("Thinking...")
+        while (true) {
+            const assistantMessage = await generate(conversation);
+            conversation.push(...assistantMessage.output);
+            // console.log(conversation)
+            if (assistantMessage.type === "assistant")
+                break;
+        }
     }
 
     while (true) {
         const prompt = await rl.question("❯ ")
         conversation.push({ "role": "user", content: prompt })
-        const assistantMessage = await generate(conversation);
-        if (typeof assistantMessage === "string")
-            conversation.push({ role: "assistant", content: assistantMessage })
+        console.log("Thinking...")
+        while (true) {
+            const assistantMessage = await generate(conversation);
+            conversation.push(...assistantMessage.output);
+            // console.log(conversation)
+            if (assistantMessage.type === "assistant")
+                break;
+        }
     }
 }

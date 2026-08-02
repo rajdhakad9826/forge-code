@@ -1,6 +1,3 @@
-export type Role = "system" | "user" | "assistant";
+import type { ResponseInputItem } from "openai/resources/responses/responses";
 
-export interface Message {
-    role: Role,
-    content: string
-}
+export type ConversationItem = ResponseInputItem;
