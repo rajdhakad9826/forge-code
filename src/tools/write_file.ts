@@ -1,9 +1,9 @@
 import fs from 'fs/promises'
-import path from 'path'
-export async function write_file(content: string, file: string) {
+import pathModule from 'path'
+export async function write_file({ path, content }: { path: string; content: string; }) {
     try {
-        const dir = process.cwd()
-        const filePath = path.resolve(dir, file)
+        const workspace = process.cwd()
+        const filePath = pathModule.resolve(workspace, path)
         await fs.writeFile(filePath, content, 'utf-8');
         return "File written successfully."
     } catch (error) {
