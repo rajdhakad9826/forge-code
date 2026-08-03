@@ -3,6 +3,7 @@ import type { ConversationItem } from "./types.js";
 import { toolRegistry } from "../tools/registry.js";
 import { ResponseFunctionToolCall } from "openai/resources/responses/responses.mjs";
 const MODEL = "openai/gpt-oss-120b";
+// const MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
 
 type GenerateResult = {
     type: "assistant" | "tool",
@@ -60,21 +61,6 @@ export async function generate(conversation: ConversationItem[]): Promise<Genera
                     finalToolCalls[index].arguments += event.delta;
                 };
                 break;
-            case "response.function_call_arguments.done":
-                // console.log(finalToolCalls)
-                const toolCalls = Object.values(finalToolCalls);
-                let toolOutputs: ConversationItem[] = [];
-                for (let tool in finalToolCalls) {
-                    const args = JSON.parse(finalToolCalls[tool].arguments);
-                    const toolName = finalToolCalls[tool].name
-                    const toolResult = await toolRegistry[toolName].callback(args)
-                    toolOutputs.push({
-                        type: "function_call_output",
-                        call_id: finalToolCalls[tool].call_id,
-                        output: toolResult
-                    })
-                }
-                return { type: "tool", output: [...toolCalls, ...toolOutputs] };
             case "response.output_text.delta":
                 process.stdout.write(event.delta)
                 break;
@@ -85,6 +71,23 @@ export async function generate(conversation: ConversationItem[]): Promise<Genera
                     output: [{ role: "assistant", content: event.text }]
                 }
                 return response
+            case "response.completed":
+                // console.log(finalToolCalls)
+                const toolCalls = Object.values(finalToolCalls);
+                if (toolCalls.length > 0) {
+                    let toolOutputs: ConversationItem[] = [];
+                    for (let tool in finalToolCalls) {
+                        const args = JSON.parse(finalToolCalls[tool].arguments);
+                        const toolName = finalToolCalls[tool].name
+                        const toolResult = await toolRegistry[toolName].callback(args)
+                        toolOutputs.push({
+                            type: "function_call_output",
+                            call_id: finalToolCalls[tool].call_id,
+                            output: toolResult
+                        })
+                    }
+                    return { type: "tool", output: [...toolCalls, ...toolOutputs] };
+                }
         }
     }
     throw new Error("Response stream ended without a final response.");
