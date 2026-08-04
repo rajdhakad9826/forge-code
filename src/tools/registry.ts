@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { get_current_time } from "./get_current_time.js"
 import { read_file } from "./read_file.js";
 import { write_file } from "./write_file.js";
+import { list_directory } from "./list_directory.js";
 
 type ToolParameter = {
     name: string;
@@ -48,6 +49,17 @@ export const toolRegistry: ToolRegistry = {
             }
         ],
         callback: write_file
+    },
+    list_directory: {
+        description: "List the immediate contents of a directory (non-recursive). Returns one entry per line, with directories prefixed by [DIR]. Use this tool to explore the workspace before reading files.",
+        parameters: [
+            {
+                name: "path",
+                type: "string",
+                description: "The relative or absolute path of the directory to list. Defaults to the current working directory."
+            }
+        ],
+        callback: list_directory
     }
 }
 
