@@ -28,13 +28,18 @@ export async function generate(conversation: ConversationItem[]): Promise<Genera
 
         }
 
+        const required = Object.keys(properties);
+
         tools.push({
             type: "function" as const,
             name: tool,
             description: toolRegistry[tool].description,
             parameters: {
                 type: "object",
-                properties: properties
+                properties: properties,
+                ...(required.length > 0 && {
+                    required: required,
+                })
             },
             strict: true
         })
