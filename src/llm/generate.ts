@@ -1,14 +1,9 @@
 import { client } from "./client.js";
 import type { ConversationItem } from "./types.js";
 import { toolRegistry } from "../tools/registry.js";
-import { ResponseFunctionToolCall } from "openai/resources/responses/responses.mjs";
+import type { GenerateResult, FunctionToolCall } from "./types.js";
 const MODEL = "openai/gpt-oss-120b";
 // const MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
-
-type GenerateResult = {
-    type: "assistant" | "tool",
-    output: ConversationItem[]
-}
 
 
 export async function generate(conversation: ConversationItem[]): Promise<GenerateResult> {
@@ -52,7 +47,7 @@ export async function generate(conversation: ConversationItem[]): Promise<Genera
         stream: true
     })
 
-    const finalToolCalls: Record<number, ResponseFunctionToolCall> = {}
+    const finalToolCalls: Record<number, FunctionToolCall> = {}
     for await (const event of stream) {
         // console.log(event)
         switch (event.type) {

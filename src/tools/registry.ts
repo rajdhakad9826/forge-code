@@ -1,23 +1,9 @@
-import OpenAI from "openai";
 import { get_current_time } from "./get_current_time.js"
 import { read_file } from "./read_file.js";
 import { write_file } from "./write_file.js";
 import { list_directory } from "./list_directory.js";
 import { execute_shell } from "./execute_shell.js";
-
-type ToolParameter = {
-    name: string;
-    type: string;
-    description: string;
-};
-
-type Tool = {
-    description: string;
-    parameters?: ToolParameter[];
-    callback: (...args: any[]) => Promise<string | OpenAI.Responses.ResponseFunctionCallOutputItemList>;
-};
-
-export type ToolRegistry = Record<string, Tool>;
+import type { ToolRegistry } from "./types.js";
 
 export const toolRegistry: ToolRegistry = {
     get_current_time: {
