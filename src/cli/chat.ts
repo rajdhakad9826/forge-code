@@ -1,8 +1,7 @@
-import OpenAI from "openai";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
-import { generate } from "../llm/generate.js";
 import type { ConversationItem } from "../llm/types.js";
+import { runAgent } from "../agent/run.js";
 
 const SYSTEM_PROMPT = "You are a helpful assistant.";
 
@@ -29,26 +28,12 @@ export async function startChat(initialPrompt: string) {
 
     if (initialPrompt) {
         conversation.push({ "role": "user", content: initialPrompt })
-        console.log("Thinking...")
-        while (true) {
-            const assistantMessage = await generate(conversation);
-            conversation.push(...assistantMessage.output);
-            // console.log(conversation)
-            if (assistantMessage.type === "assistant")
-                break;
-        }
+        await runAgent(conversation);
     }
 
     while (true) {
         const prompt = await rl.question("❯ ")
         conversation.push({ "role": "user", content: prompt })
-        console.log("Thinking...")
-        while (true) {
-            const assistantMessage = await generate(conversation);
-            conversation.push(...assistantMessage.output);
-            // console.log(conversation)
-            if (assistantMessage.type === "assistant")
-                break;
-        }
+        await runAgent(conversation)
     }
 }
