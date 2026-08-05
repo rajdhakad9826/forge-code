@@ -3,9 +3,7 @@ import type { ConversationItem } from "./types.js";
 import { toolRegistry } from "../tools/registry.js";
 import type { GenerateResult, FunctionToolCall } from "./types.js";
 import { toolDefinitions } from "../tools/definitions.js";
-const MODEL = "openai/gpt-oss-120b";
-// const MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
-
+import { MODEL } from "../config/llm.js";
 
 export async function generate(conversation: ConversationItem[]): Promise<GenerateResult> {
 
