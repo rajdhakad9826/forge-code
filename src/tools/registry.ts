@@ -3,6 +3,7 @@ import { get_current_time } from "./get_current_time.js"
 import { read_file } from "./read_file.js";
 import { write_file } from "./write_file.js";
 import { list_directory } from "./list_directory.js";
+import { execute_shell } from "./execute_shell.js";
 
 type ToolParameter = {
     name: string;
@@ -60,6 +61,17 @@ export const toolRegistry: ToolRegistry = {
             }
         ],
         callback: list_directory
+    },
+    execute_shell: {
+        description: "Execute a shell command in the current workspace and return its standard output or error output.",
+        parameters: [
+            {
+                name: "command",
+                type: "string",
+                description: "The shell command to execute."
+            },
+        ],
+        callback: execute_shell
     }
 }
 

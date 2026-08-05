@@ -15,8 +15,3 @@ export async function execute_shell({ command }: { command: string }) {
         return String(error)
     }
 }
-
-(async function () {
-    const output = await execute_shell({ command: `cat .env` });
-    console.log(output)
-})()
