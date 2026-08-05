@@ -2,8 +2,8 @@ import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 import type { ConversationItem } from "../llm/types.js";
 import { runAgent } from "../agent/run.js";
+import { SYSTEM_PROMPT } from "../agent/instructions.js";
 
-const SYSTEM_PROMPT = "You are a helpful assistant.";
 
 
 export async function startChat(initialPrompt: string) {
