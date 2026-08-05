@@ -2,48 +2,17 @@ import { client } from "./client.js";
 import type { ConversationItem } from "./types.js";
 import { toolRegistry } from "../tools/registry.js";
 import type { GenerateResult, FunctionToolCall } from "./types.js";
+import { toolDefinitions } from "../tools/definitions.js";
 const MODEL = "openai/gpt-oss-120b";
 // const MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
 
 
 export async function generate(conversation: ConversationItem[]): Promise<GenerateResult> {
-    let tools = [];
-    for (let tool in toolRegistry) {
-
-        let properties: Record<string, any> = {};
-
-        if (toolRegistry[tool].parameters) {
-            const parameters = toolRegistry[tool].parameters;
-            parameters.forEach((parameter) => {
-                properties[parameter.name] = {
-                    type: parameter.type,
-                    description: parameter.description
-                }
-            })
-
-        }
-
-        const required = Object.keys(properties);
-
-        tools.push({
-            type: "function" as const,
-            name: tool,
-            description: toolRegistry[tool].description,
-            parameters: {
-                type: "object",
-                properties: properties,
-                ...(required.length > 0 && {
-                    required: required,
-                })
-            },
-            strict: true
-        })
-    }
 
     const stream = await client.responses.create({
         model: MODEL,
         input: conversation,
-        tools: tools,
+        tools: toolDefinitions,
         stream: true
     })
 
