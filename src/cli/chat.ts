@@ -1,21 +1,13 @@
-import { stdin, stdout } from "node:process";
-import { createInterface } from "node:readline/promises";
+import { rl } from "./io.js";
 import type { ConversationItem } from "../llm/types.js";
 import { runAgent } from "../agent/run.js";
 import { SYSTEM_PROMPT } from "../agent/instructions.js";
-
-
 
 export async function startChat(initialPrompt: string) {
 
     const conversation: ConversationItem[] = [
         { role: "system" as const, content: SYSTEM_PROMPT },
     ]
-
-    const rl = createInterface({
-        input: stdin,
-        output: stdout
-    });
 
     rl.on("close", () => {
         console.log("\nGoodbye!");
