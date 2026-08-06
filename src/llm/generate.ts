@@ -39,22 +39,8 @@ export async function generate(conversation: ConversationItem[]): Promise<Genera
                 }
                 return response
             case "response.completed":
-                // console.log(finalToolCalls)
                 const toolCalls = Object.values(finalToolCalls);
-                if (toolCalls.length > 0) {
-                    let toolOutputs: ConversationItem[] = [];
-                    for (let tool in finalToolCalls) {
-                        const args = JSON.parse(finalToolCalls[tool].arguments);
-                        const toolName = finalToolCalls[tool].name
-                        const toolResult = await toolRegistry[toolName].callback(args)
-                        toolOutputs.push({
-                            type: "function_call_output",
-                            call_id: finalToolCalls[tool].call_id,
-                            output: toolResult
-                        })
-                    }
-                    return { type: "tool", output: [...toolCalls, ...toolOutputs] };
-                }
+                return { type: "tool", output: toolCalls }
         }
     }
     throw new Error("Response stream ended without a final response.");
