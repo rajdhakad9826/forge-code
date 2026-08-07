@@ -13,6 +13,7 @@
     "resolveJsonModule": true,
     "declaration": true,
     "sourceMap": true,
+    "jsx": "react-jsx",
     "types": [
       "node"
     ]

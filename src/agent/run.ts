@@ -3,10 +3,10 @@ import { generate } from "../llm/generate.js";
 import { toolRegistry } from "../tools/registry.js";
 import { askForPermission } from "./permissions.js";
 
-export async function runAgent(conversation: ConversationItem[]) {
-    console.log("Thinking...")
+export async function runAgent(conversation: ConversationItem[], onTextDelta?: (delta: string) => void) {
+    const textDeltaCallback = onTextDelta || ((delta: string) => { process.stdout.write(delta) });
     while (true) {
-        const assistantMessage = await generate(conversation, (delta: string) => { process.stdout.write(delta) });
+        const assistantMessage = await generate(conversation, textDeltaCallback);
         conversation.push(...assistantMessage.output);
         if (assistantMessage.type === "assistant")
             break;
