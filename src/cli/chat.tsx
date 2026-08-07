@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { render, Box, Text, useApp } from "ink";
 import _TextInput from "ink-text-input";
+import Spinner from "ink-spinner";
 import { runAgent } from "../agent/run.js";
 import { SYSTEM_PROMPT } from "../agent/instructions.js";
 import type { ConversationItem } from "../llm/types.js";
@@ -80,6 +81,14 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     return null;
                 })}
             </Box>
+
+            {isAgentReplying && !streamedResponse && (
+                <Box flexDirection="column">
+                    <Text color="#8A8578">
+                        <Spinner type="dots" /> Thinking...
+                    </Text>
+                </Box>
+            )}
 
             {streamedResponse && (
                 <Box flexDirection="column">
