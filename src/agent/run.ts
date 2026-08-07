@@ -6,7 +6,7 @@ import { askForPermission } from "./permissions.js";
 export async function runAgent(conversation: ConversationItem[]) {
     console.log("Thinking...")
     while (true) {
-        const assistantMessage = await generate(conversation);
+        const assistantMessage = await generate(conversation, (delta: string) => { process.stdout.write(delta) });
         conversation.push(...assistantMessage.output);
         if (assistantMessage.type === "assistant")
             break;

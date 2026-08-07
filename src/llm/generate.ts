@@ -1,11 +1,10 @@
 import { client } from "./client.js";
 import type { ConversationItem } from "./types.js";
-import { toolRegistry } from "../tools/registry.js";
 import type { GenerateResult, FunctionToolCall } from "./types.js";
 import { toolDefinitions } from "../tools/definitions.js";
 import { MODEL } from "../config/llm.js";
 
-export async function generate(conversation: ConversationItem[]): Promise<GenerateResult> {
+export async function generate(conversation: ConversationItem[], onTextDelta: (delta: string) => void): Promise<GenerateResult> {
 
     const stream = await client.responses.create({
         model: MODEL,
@@ -29,10 +28,10 @@ export async function generate(conversation: ConversationItem[]): Promise<Genera
                 };
                 break;
             case "response.output_text.delta":
-                process.stdout.write(event.delta)
+                onTextDelta(event.delta)
                 break;
             case "response.output_text.done":
-                process.stdout.write('\n')
+                onTextDelta('\n')
                 let response: GenerateResult = {
                     type: "assistant",
                     output: [{ role: "assistant", content: event.text }]
