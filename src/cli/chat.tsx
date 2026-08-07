@@ -48,15 +48,37 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     return (
         <Box flexDirection="column" padding={1}>
 
-            <Box flexDirection="column" marginBottom={1}>
-                <Text bold color="#E8722C">{logo}</Text>
-                <Box marginTop={1} flexDirection="column">
-                    <Text color="#F2F0EB" bold>agent for your terminal</Text>
-                    <Box marginTop={1}>
-                        <Text color="#F2F0EB">cwd: {process.cwd()}</Text>
+            <Box
+                borderStyle="round"
+                borderColor="#E8722C"
+                padding={1}
+                paddingX={2}
+                flexDirection="row"
+                marginBottom={1}
+            >
+                <Box flexDirection="column" width="50%" alignItems="center" justifyContent="center">
+                    <Text bold color="#F2F0EB">Welcome to Forge Code!</Text>
+                    <Box marginY={1}>
+                        <Text bold color="#E8722C">{logo.trim()}</Text>
                     </Box>
-                    <Box marginTop={1}>
-                        <Text color="#8A8578">────────────────────────────</Text>
+                    <Text color="#8A8578">agent for your terminal</Text>
+                    <Text color="#8A8578">cwd: {process.cwd()}</Text>
+                </Box>
+
+                <Box
+                    borderStyle="single"
+                    borderColor="#E8722C"
+                    borderTop={false}
+                    borderRight={false}
+                    borderBottom={false}
+                    marginRight={2}
+                    marginLeft={1}
+                />
+
+                <Box flexDirection="column" width="50%" justifyContent="center">
+                    <Box flexDirection="column" marginBottom={1}>
+                        <Text bold color="#E8722C">Tips for getting started</Text>
+                        <Text color="#F2F0EB">Ask the agent to create a new app or clone a repository</Text>
                     </Box>
                 </Box>
             </Box>
