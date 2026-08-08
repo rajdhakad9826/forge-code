@@ -3,7 +3,11 @@ import { generate } from "../llm/generate.js";
 import { toolRegistry } from "../tools/registry.js";
 import { askForPermission } from "./permissions.js";
 
-export async function runAgent(conversation: ConversationItem[], onTextDelta?: (delta: string) => void) {
+export async function runAgent(
+    conversation: ConversationItem[],
+    onTextDelta?: (delta: string) => void,
+    onPermissionRequest?: (toolName: string, args: any) => Promise<boolean>
+) {
     const textDeltaCallback = onTextDelta || ((delta: string) => { process.stdout.write(delta) });
     while (true) {
         const assistantMessage = await generate(conversation, textDeltaCallback);
@@ -17,12 +21,15 @@ export async function runAgent(conversation: ConversationItem[], onTextDelta?: (
                 const args = JSON.parse(tool.arguments);
                 const toolName = tool.name;
 
-                const hasPermission = await askForPermission(toolName, args);
+                const hasPermission = onPermissionRequest
+                    ? await onPermissionRequest(toolName, args)
+                    : await askForPermission(toolName, args);
+
                 if (!hasPermission) {
                     toolOutputs.push({
                         type: "function_call_output",
                         call_id: tool.call_id,
-                        output: "User denied permission to execute this tool."
+                        output: "User denied permission to execute this tool. Tell the user what you need to do differently."
                     });
                     continue;
                 }
