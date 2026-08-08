@@ -99,19 +99,22 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
         setIsAgentReplying(true);
         setStreamedResponse("");
 
-        await runAgent(newConversation, (delta: string) => {
-            setStreamedResponse(prev => prev + delta);
-        }, async (toolName, args) => {
-            return new Promise<boolean>((resolve) => {
-                setPermissionRequest({
-                    toolName,
-                    args,
-                    resolve: (allow: boolean) => {
-                        setPermissionRequest(null);
-                        resolve(allow);
-                    }
+        await runAgent(newConversation, {
+            onTextDelta: (delta: string) => {
+                setStreamedResponse(prev => prev + delta);
+            },
+            onPermissionRequest: async (toolName, args) => {
+                return new Promise<boolean>((resolve) => {
+                    setPermissionRequest({
+                        toolName,
+                        args,
+                        resolve: (allow: boolean) => {
+                            setPermissionRequest(null);
+                            resolve(allow);
+                        }
+                    });
                 });
-            });
+            }
         });
 
         setIsAgentReplying(false);

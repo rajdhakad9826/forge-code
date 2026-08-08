@@ -3,14 +3,14 @@ import { generate } from "../llm/generate.js";
 import { toolRegistry } from "../tools/registry.js";
 import { askForPermission } from "./permissions.js";
 
-export async function runAgent(
-    conversation: ConversationItem[],
-    onTextDelta?: (delta: string) => void,
-    onPermissionRequest?: (toolName: string, args: any) => Promise<boolean>
-) {
-    const textDeltaCallback = onTextDelta || ((delta: string) => { process.stdout.write(delta) });
+interface agentCallbacks {
+    onTextDelta: (delta: string) => void,
+    onPermissionRequest: (toolName: string, args: any) => Promise<boolean>
+}
+
+export async function runAgent(conversation: ConversationItem[], { onTextDelta, onPermissionRequest }: agentCallbacks) {
     while (true) {
-        const assistantMessage = await generate(conversation, textDeltaCallback);
+        const assistantMessage = await generate(conversation, onTextDelta);
         conversation.push(...assistantMessage.output);
         if (assistantMessage.type === "assistant")
             break;
@@ -21,9 +21,7 @@ export async function runAgent(
                 const args = JSON.parse(tool.arguments);
                 const toolName = tool.name;
 
-                const hasPermission = onPermissionRequest
-                    ? await onPermissionRequest(toolName, args)
-                    : await askForPermission(toolName, args);
+                const hasPermission = await onPermissionRequest(toolName, args)
 
                 if (!hasPermission) {
                     toolOutputs.push({
