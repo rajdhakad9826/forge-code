@@ -10,11 +10,8 @@ interface agentCallbacks {
 
 export async function runAgent(conversation: ConversationItem[], { onTextDelta, onPermissionRequest }: agentCallbacks) {
     while (true) {
-        const assistantMessage = await generate(conversation, onTextDelta);
-        conversation.push(...assistantMessage.output);
-        if (assistantMessage.type === "assistant")
-            break;
-        const toolCalls = assistantMessage.output
+        const { output, toolCalls } = await generate(conversation, onTextDelta);
+        conversation.push(...output, ...toolCalls);
         if (toolCalls.length > 0) {
             let toolOutputs: ConversationItem[] = [];
             for (let tool of toolCalls) {
@@ -40,6 +37,8 @@ export async function runAgent(conversation: ConversationItem[], { onTextDelta, 
                 });
             }
             conversation.push(...toolOutputs);
+        } else {
+            break;
         }
         // console.log(conversation)
     }

@@ -3,7 +3,9 @@ import { ResponseFunctionToolCall } from "openai/resources/responses/responses.m
 
 export type ConversationItem = ResponseInputItem;
 
-
-export type GenerateResult = { type: "assistant"; output: ConversationItem[] } | { type: "tool"; output: FunctionToolCall[] };
+export type GenerateResult = {
+    output: ConversationItem[],
+    toolCalls: FunctionToolCall[]
+};
 
 export type FunctionToolCall = ResponseFunctionToolCall

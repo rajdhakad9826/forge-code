@@ -1,6 +1,5 @@
 import { client } from "./client.js";
-import type { ConversationItem } from "./types.js";
-import type { GenerateResult, FunctionToolCall } from "./types.js";
+import type { ConversationItem, GenerateResult, FunctionToolCall } from "./types.js";
 import { toolDefinitions } from "../tools/definitions.js";
 import { MODEL } from "../config/llm.js";
 
@@ -14,6 +13,7 @@ export async function generate(conversation: ConversationItem[], onTextDelta: (d
     })
 
     const finalToolCalls: Record<number, FunctionToolCall> = {}
+    const assistantMessage: ConversationItem[] = [];
     for await (const event of stream) {
         // console.log(event)
         switch (event.type) {
@@ -31,15 +31,14 @@ export async function generate(conversation: ConversationItem[], onTextDelta: (d
                 onTextDelta(event.delta)
                 break;
             case "response.output_text.done":
-                onTextDelta('\n')
-                let response: GenerateResult = {
-                    type: "assistant",
-                    output: [{ role: "assistant", content: event.text }]
-                }
-                return response
+                assistantMessage.push({ role: "assistant", content: event.text })
+                break;
             case "response.completed":
                 const toolCalls = Object.values(finalToolCalls);
-                return { type: "tool", output: toolCalls }
+                return {
+                    output: assistantMessage,
+                    toolCalls: toolCalls
+                }
         }
     }
     throw new Error("Response stream ended without a final response.");
