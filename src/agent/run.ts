@@ -21,7 +21,7 @@ export async function runAgent(conversation: ConversationItem[], { onTextDelta, 
                 const args = JSON.parse(tool.arguments);
                 const toolName = tool.name;
 
-                const hasPermission = await onPermissionRequest(toolName, args)
+                const hasPermission = await askForPermission(toolName, args, onPermissionRequest)
 
                 if (!hasPermission) {
                     toolOutputs.push({
