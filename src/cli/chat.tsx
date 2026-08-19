@@ -23,6 +23,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const [streamedResponse, setStreamedResponse] = useState("");
     const [isAgentReplying, setIsAgentReplying] = useState(false);
     const [permissionRequest, setPermissionRequest] = useState<{ toolName: string, args: any, resolve: (allow: boolean) => void } | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = async (query: string) => {
         if (!query.trim()) return;
@@ -31,6 +32,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
         setConversation(newConversation);
         setIsAgentReplying(true);
         setStreamedResponse("");
+        setError(null);
 
         await runAgent(newConversation, {
             onTextDelta: (delta: string) => {
@@ -47,6 +49,9 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                         }
                     });
                 });
+            },
+            onError: (error: Error) => {
+                setError(error.message);
             }
         });
 
@@ -131,6 +136,12 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
             {streamedResponse && (
                 <Box flexDirection="column">
                     <Text color="#F2F0EB">{streamedResponse}</Text>
+                </Box>
+            )}
+
+            {error && (
+                <Box flexDirection="column" marginY={1}>
+                    <Text color="red">✗ Error: {error}</Text>
                 </Box>
             )}
 

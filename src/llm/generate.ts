@@ -33,6 +33,8 @@ export async function generate(conversation: ConversationItem[], onTextDelta: (d
             case "response.output_text.done":
                 assistantMessage.push({ role: "assistant", content: event.text })
                 break;
+            case "response.failed":
+                throw new Error(event.response?.error?.message ?? "LLM request failed.");
             case "response.completed":
                 const toolCalls = Object.values(finalToolCalls);
                 return [
