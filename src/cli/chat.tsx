@@ -20,7 +20,6 @@ type ToolExecution = {
     call_id: string;
     name: string;
     args: any;
-    status: "running" | "completed";
 };
 
 function ToolExecutionView({ name, args, status }: { name: string, args: any, status: "running" | "completed" }) {
@@ -89,6 +88,9 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
             onTextDelta: (delta: string) => {
                 setStreamedResponse(prev => prev + delta);
             },
+            onConversationUpdate: (conversation: ConversationItem[]) => {
+                setConversation([...conversation]);
+            },
             onPermissionRequest: async (toolName, args) => {
                 return new Promise<boolean>((resolve) => {
                     setPermissionRequest({
@@ -111,18 +113,20 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                         call_id: tool.call_id,
                         name: tool.name,
                         args: JSON.parse(tool.arguments),
-                        status: "running"
                     }
                 ]);
             },
-            onToolEnd: () => {
-                setToolExecutions([]);
+            onToolEnd: (call_id) => {
+                setToolExecutions(prev =>
+                    prev.filter(tool => tool.call_id !== call_id)
+                );
             }
         });
 
         setIsAgentReplying(false);
         setStreamedResponse("");
-        setConversation([...newConversation]);
+        setToolExecutions([]);
+        // setConversation([...newConversation]);
     };
 
     useEffect(() => {
@@ -211,7 +215,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                             key={`tool-${index}`}
                             name={tool.name}
                             args={tool.args}
-                            status={tool.status}
+                            status="running"
                         />
                     ))}
                 </Box>

@@ -2,7 +2,7 @@ import { toolRegistry } from "../tools/registry.js";
 import { askForPermission } from "./permissions.js";
 import type { ConversationItem, FunctionToolCall } from "../llm/types.js";
 
-export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionRequest: (toolName: string, args: any) => Promise<boolean>, onToolStart: (tool: FunctionToolCall) => void, onToolEnd: () => void) {
+export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionRequest: (toolName: string, args: any) => Promise<boolean>, onToolStart: (tool: FunctionToolCall) => void, onToolEnd: (call_id: string) => void) {
     let toolOutputs: ConversationItem[] = [];
     for (let tool of toolCalls) {
         try {
@@ -26,7 +26,7 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
 
             const toolResult = await toolRegistry[toolName].callback(args);
 
-            onToolEnd()
+            onToolEnd(tool.call_id)
             toolOutputs.push({
                 type: "function_call_output",
                 call_id: tool.call_id,
