@@ -6,6 +6,7 @@ import { runAgent } from "../agent/run.js";
 import { SYSTEM_PROMPT } from "../agent/instructions.js";
 import type { ConversationItem } from "../llm/types.js";
 import { PermissionPrompt } from "./PermissionPrompt.js";
+import { string, unknown } from "zod";
 
 const TextInput = _TextInput as any;
 
@@ -14,6 +15,54 @@ const logo = `
 █▀▀ █ █ █▀▄ █ █ █▀▀
 ▀   ▀▀▀ ▀ ▀ ▀▀▀ ▀▀▀
 `
+
+type ToolExecution = {
+    call_id: string;
+    name: string;
+    args: any;
+    status: "running" | "completed";
+};
+
+function ToolExecutionView({ name, args, status }: { name: string, args: any, status: "running" | "completed" }) {
+    const isWrite = name === 'write_file';
+
+    let argsStr = "";
+    let writeContent = "";
+
+    if (isWrite) {
+        argsStr = args?.path || "";
+        writeContent = args?.content || "";
+    } else {
+        if (typeof args === 'object' && args !== null) {
+            argsStr = Object.values(args).join(" ");
+        } else {
+            argsStr = String(args || "");
+        }
+    }
+
+    return (
+        <Box flexDirection="column">
+            <Box flexDirection="row">
+                <Text color={status === "running" ? "#F2F0EB" : "#A3BE8C"}>
+                    {status === "running" ? <Text color="#8A8578"><Spinner type="dots" /> </Text> : "✓ "}
+                </Text>
+                <Text bold color="#F2F0EB">{name} </Text>
+                <Text color="#8A8578">{argsStr}</Text>
+            </Box>
+
+            {isWrite && writeContent && status === "completed" && (
+                <Box flexDirection="column" paddingLeft={2} marginTop={1} marginBottom={1}>
+                    {writeContent.split('\n').map((line: string, i: number) => (
+                        <Text key={i}>
+                            <Text color="#4C566A">{String(i + 1).padEnd(2, ' ')} </Text>
+                            <Text color="#E5E9F0">{line}</Text>
+                        </Text>
+                    ))}
+                </Box>
+            )}
+        </Box>
+    );
+}
 
 const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const [conversation, setConversation] = useState<ConversationItem[]>([
@@ -24,6 +73,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const [isAgentReplying, setIsAgentReplying] = useState(false);
     const [permissionRequest, setPermissionRequest] = useState<{ toolName: string, args: any, resolve: (allow: boolean) => void } | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
 
     const handleSubmit = async (query: string) => {
         if (!query.trim()) return;
@@ -33,6 +83,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
         setIsAgentReplying(true);
         setStreamedResponse("");
         setError(null);
+        setToolExecutions([]);
 
         await runAgent(newConversation, {
             onTextDelta: (delta: string) => {
@@ -52,6 +103,20 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
             },
             onError: (error: Error) => {
                 setError(error.message);
+            },
+            onToolStart: (tool) => {
+                setToolExecutions(prev => [
+                    ...prev,
+                    {
+                        call_id: tool.call_id,
+                        name: tool.name,
+                        args: JSON.parse(tool.arguments),
+                        status: "running"
+                    }
+                ]);
+            },
+            onToolEnd: () => {
+                setToolExecutions([]);
             }
         });
 
@@ -114,9 +179,23 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                             </Box>
                         );
                     }
+                    if (anyMsg.type === 'function_call') {
+                        let parsedArgs = anyMsg.arguments;
+                        try {
+                            if (typeof parsedArgs === 'string') parsedArgs = JSON.parse(parsedArgs);
+                        } catch (e) { }
+                        return (
+                            <ToolExecutionView
+                                key={`msg-${index}`}
+                                name={anyMsg.name}
+                                args={parsedArgs}
+                                status="completed"
+                            />
+                        );
+                    }
                     if (anyMsg.role === 'assistant' && anyMsg.content) {
                         return (
-                            <Box key={`msg-${index}`} flexDirection="column">
+                            <Box key={`msg-${index}`} flexDirection="column" marginBottom={1}>
                                 <Text color="#F2F0EB">{anyMsg.content}</Text>
                             </Box>
                         );
@@ -125,7 +204,20 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 })}
             </Box>
 
-            {isAgentReplying && !streamedResponse && (
+            {toolExecutions.length > 0 && (
+                <Box flexDirection="column">
+                    {toolExecutions.map((tool, index) => (
+                        <ToolExecutionView
+                            key={`tool-${index}`}
+                            name={tool.name}
+                            args={tool.args}
+                            status={tool.status}
+                        />
+                    ))}
+                </Box>
+            )}
+
+            {isAgentReplying && !streamedResponse && toolExecutions.length == 0 && (
                 <Box flexDirection="column">
                     <Text color="#8A8578">
                         <Spinner type="dots" /> Thinking...

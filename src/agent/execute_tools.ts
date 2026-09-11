@@ -2,12 +2,14 @@ import { toolRegistry } from "../tools/registry.js";
 import { askForPermission } from "./permissions.js";
 import type { ConversationItem, FunctionToolCall } from "../llm/types.js";
 
-export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionRequest: (toolName: string, args: any) => Promise<boolean>) {
+export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionRequest: (toolName: string, args: any) => Promise<boolean>, onToolStart: (tool: FunctionToolCall) => void, onToolEnd: () => void) {
     let toolOutputs: ConversationItem[] = [];
     for (let tool of toolCalls) {
         try {
             const args = JSON.parse(tool.arguments);
             const toolName = tool.name;
+
+            onToolStart(tool)
 
             const hasPermission = await askForPermission(toolName, args, onPermissionRequest)
 
@@ -23,6 +25,8 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
                 throw new Error(`Tool "${toolName}" does not exist.`);
 
             const toolResult = await toolRegistry[toolName].callback(args);
+
+            onToolEnd()
             toolOutputs.push({
                 type: "function_call_output",
                 call_id: tool.call_id,
