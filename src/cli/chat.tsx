@@ -177,6 +177,12 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 })}
             </Box>
 
+            {streamedResponse.trim() && (
+                <Box flexDirection="column">
+                    <Text color="#F2F0EB">{streamedResponse.trim()}</Text>
+                </Box>
+            )}
+
             {agentState == "tool_running" && (
                 <>
                     {toolExecutions.map((tool, index) => (
@@ -188,12 +194,6 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                         />
                     ))}
                 </>
-            )}
-
-            {streamedResponse && (
-                <Box flexDirection="column">
-                    <Text color="#F2F0EB">{streamedResponse}</Text>
-                </Box>
             )}
 
             {agentState == "thinking" && (
