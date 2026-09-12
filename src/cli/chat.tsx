@@ -22,13 +22,19 @@ type ToolExecution = {
     args: any;
 };
 
+type AgentState =
+    | "thinking"
+    | "tool_running"
+    | "awaiting_permission"
+    | "idle";
+
 const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const [conversation, setConversation] = useState<ConversationItem[]>([
         { role: "system", content: SYSTEM_PROMPT },
     ]);
     const [input, setInput] = useState("");
     const [streamedResponse, setStreamedResponse] = useState("");
-    const [isAgentReplying, setIsAgentReplying] = useState(false);
+    const [agentState, setAgentState] = useState<AgentState>("idle")
     const [permissionRequest, setPermissionRequest] = useState<{ toolName: string, args: any, resolve: (allow: boolean) => void } | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
@@ -38,7 +44,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
         const newConversation: ConversationItem[] = [...conversation, { role: "user", content: query }];
         setConversation(newConversation);
-        setIsAgentReplying(true);
+        setAgentState("thinking");
         setStreamedResponse("");
         setError(null);
         setToolExecutions([]);
@@ -48,15 +54,18 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 setStreamedResponse(prev => prev + delta);
             },
             onConversationUpdate: (conversation: ConversationItem[]) => {
+                setStreamedResponse("");
                 setConversation([...conversation]);
             },
             onPermissionRequest: async (toolName, args) => {
+                setAgentState("awaiting_permission");
                 return new Promise<boolean>((resolve) => {
                     setPermissionRequest({
                         toolName,
                         args,
                         resolve: (allow: boolean) => {
                             setPermissionRequest(null);
+                            setAgentState("thinking");
                             resolve(allow);
                         }
                     });
@@ -66,6 +75,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 setError(error.message);
             },
             onToolStart: (tool) => {
+                setAgentState("tool_running");
                 setToolExecutions(prev => [
                     ...prev,
                     {
@@ -76,16 +86,16 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 ]);
             },
             onToolEnd: (call_id) => {
+                setAgentState("thinking");
                 setToolExecutions(prev =>
                     prev.filter(tool => tool.call_id !== call_id)
                 );
             }
         });
 
-        setIsAgentReplying(false);
+        setAgentState("idle");
         setStreamedResponse("");
         setToolExecutions([]);
-        // setConversation([...newConversation]);
     };
 
     useEffect(() => {
@@ -156,10 +166,10 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                             />
                         );
                     }
-                    if (anyMsg.role === 'assistant' && anyMsg.content) {
+                    if (anyMsg.role === 'assistant' && typeof anyMsg.content === 'string' && anyMsg.content.trim()) {
                         return (
-                            <Box key={`msg-${index}`} flexDirection="column" marginBottom={1}>
-                                <Text color="#F2F0EB">{anyMsg.content}</Text>
+                            <Box key={`msg-${index}`} flexDirection="column">
+                                <Text color="#F2F0EB">{anyMsg.content.trim()}</Text>
                             </Box>
                         );
                     }
@@ -167,8 +177,8 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 })}
             </Box>
 
-            {toolExecutions.length > 0 && (
-                <Box flexDirection="column">
+            {agentState == "tool_running" && (
+                <>
                     {toolExecutions.map((tool, index) => (
                         <ToolExecutionView
                             key={`tool-${index}`}
@@ -177,20 +187,20 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                             status="running"
                         />
                     ))}
-                </Box>
-            )}
-
-            {isAgentReplying && !streamedResponse && toolExecutions.length == 0 && (
-                <Box flexDirection="column">
-                    <Text color="#8A8578">
-                        <Spinner type="dots" /> Thinking...
-                    </Text>
-                </Box>
+                </>
             )}
 
             {streamedResponse && (
                 <Box flexDirection="column">
                     <Text color="#F2F0EB">{streamedResponse}</Text>
+                </Box>
+            )}
+
+            {agentState == "thinking" && (
+                <Box flexDirection="column">
+                    <Text color="#8A8578">
+                        <Spinner type="dots" /> Thinking...
+                    </Text>
                 </Box>
             )}
 
@@ -208,7 +218,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 />
             )}
 
-            {!permissionRequest && (
+            {agentState !== "awaiting_permission" && (
                 <Box flexDirection="column" marginTop={1}>
                     <Box borderStyle="round" borderColor="#8A8578" paddingX={1}>
                         <Text color="#E8722C">❯ </Text>
@@ -216,7 +226,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                             value={input}
                             onChange={setInput}
                             onSubmit={(val: string) => {
-                                if (isAgentReplying) return;
+                                if (agentState !== "idle") return;
                                 setInput("");
                                 handleSubmit(val);
                             }}
