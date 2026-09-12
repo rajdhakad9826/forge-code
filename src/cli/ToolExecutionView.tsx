@@ -2,7 +2,7 @@ import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
 
 
-export function ToolExecutionView({ name, args, status }: { name: string, args: any, status: "running" | "completed" }) {
+export function ToolExecutionView({ name, args, status }: { name: string, args: any, status: "running" | "completed" | "awaiting_permission" | "failed" }) {
     const isWrite = name === 'write_file';
 
     let argsStr = "";
@@ -22,9 +22,10 @@ export function ToolExecutionView({ name, args, status }: { name: string, args: 
     return (
         <Box flexDirection="column">
             <Box flexDirection="row">
-                <Text color={status === "running" ? "#F2F0EB" : "#A3BE8C"}>
-                    {status === "running" ? <Text color="#8A8578"><Spinner type="dots" /> </Text> : "✓ "}
-                </Text>
+                {status === "running" && <Text color="#8A8578"><Spinner type="dots" /> </Text>}
+                {status === "completed" && <Text color="#A3BE8C">✓ </Text>}
+                {status === "awaiting_permission" && <Text color="#EBCB8B">◍ </Text>}
+                {status === "failed" && <Text color="#BF616A">✗ </Text>}
                 <Text bold color="#F2F0EB">{name} </Text>
                 <Text color="#8A8578">{argsStr}</Text>
             </Box>
