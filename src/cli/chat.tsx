@@ -207,7 +207,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
             {streamedResponse.trim() && (
                 <Box flexDirection="column" marginTop={1}>
-                    <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{streamedResponse.trim()}</Text>
+                    <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{marked.parse(streamedResponse).trim()}</Text>
                 </Box>
             )}
 
