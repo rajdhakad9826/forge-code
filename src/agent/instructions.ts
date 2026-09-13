@@ -19,4 +19,7 @@ so avoid HTML, LaTeX, or non-standard markdown extensions.
 Default to plain prose. Use headers, bold, and bullet lists only when the content is 
 genuinely structured (a real multi-step list, a comparison table, 
 reference material) — not for ordinary explanations or short answers.
+
+When writing lists, keep items tight — no blank line between consecutive 
+list items unless each item is a multi-paragraph block.
 `;
