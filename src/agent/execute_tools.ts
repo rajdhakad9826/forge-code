@@ -2,16 +2,18 @@ import { toolRegistry } from "../tools/registry.js";
 import { askForPermission } from "./permissions.js";
 import type { ConversationItem, FunctionToolCall } from "../llm/types.js";
 
-export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionRequest: (toolName: string, args: any) => Promise<boolean>, onToolStart: (tool: FunctionToolCall) => void, onToolEnd: (call_id: string) => void) {
+export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionRequest: (tool: FunctionToolCall) => Promise<boolean>, onToolStart: (tool: FunctionToolCall) => void, onToolEnd: (call_id: string) => void) {
     let toolOutputs: ConversationItem[] = [];
     for (let tool of toolCalls) {
+        let started = false;
         try {
             const args = JSON.parse(tool.arguments);
             const toolName = tool.name;
 
             onToolStart(tool)
+            started = true;
 
-            const hasPermission = await askForPermission(toolName, args, onPermissionRequest)
+            const hasPermission = await askForPermission(tool, onPermissionRequest)
 
             if (!hasPermission) {
                 toolOutputs.push({
@@ -26,7 +28,6 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
 
             const toolResult = await toolRegistry[toolName].callback(args);
 
-            onToolEnd(tool.call_id)
             toolOutputs.push({
                 type: "function_call_output",
                 call_id: tool.call_id,
@@ -39,6 +40,10 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
                 call_id: tool.call_id,
                 output: message
             })
+        } finally {
+            if (started) {
+                onToolEnd(tool.call_id);
+            }
         }
     }
     return toolOutputs

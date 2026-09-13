@@ -4,7 +4,7 @@ import _TextInput from "ink-text-input";
 import Spinner from "ink-spinner";
 import { runAgent } from "../agent/run.js";
 import { SYSTEM_PROMPT } from "../agent/instructions.js";
-import type { ConversationItem } from "../llm/types.js";
+import type { ConversationItem, FunctionToolCall } from "../llm/types.js";
 import { PermissionPrompt } from "./PermissionPrompt.js";
 import { ToolExecutionView } from "./ToolExecutionView.js";
 
@@ -16,17 +16,16 @@ const logo = `
 ▀   ▀▀▀ ▀ ▀ ▀▀▀ ▀▀▀
 `
 
+type ToolStatus = "running" | "awaiting_permission" | "completed" | "failed";
+
 type ToolExecution = {
     call_id: string;
     name: string;
     args: any;
+    status: ToolStatus;
 };
 
-type AgentState =
-    | "thinking"
-    | "tool_running"
-    | "awaiting_permission"
-    | "idle";
+type TurnState = "idle" | "active";
 
 const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const [conversation, setConversation] = useState<ConversationItem[]>([
@@ -34,8 +33,9 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     ]);
     const [input, setInput] = useState("");
     const [streamedResponse, setStreamedResponse] = useState("");
-    const [agentState, setAgentState] = useState<AgentState>("idle")
-    const [permissionRequest, setPermissionRequest] = useState<{ toolName: string, args: any, resolve: (allow: boolean) => void } | null>(null);
+    const [turnState, setTurnState] = useState<TurnState>("idle")
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [permissionRequest, setPermissionRequest] = useState<{ tool: FunctionToolCall, resolve: (allow: boolean) => void } | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
 
@@ -44,12 +44,15 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
         const newConversation: ConversationItem[] = [...conversation, { role: "user", content: query }];
         setConversation(newConversation);
-        setAgentState("thinking");
+        setTurnState("active");
+        setIsGenerating(false);
         setStreamedResponse("");
         setError(null);
         setToolExecutions([]);
 
         await runAgent(newConversation, {
+            onGenerateStart: () => setIsGenerating(true),
+            onGenerateEnd: () => setIsGenerating(false),
             onTextDelta: (delta: string) => {
                 setStreamedResponse(prev => prev + delta);
             },
@@ -57,15 +60,14 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 setStreamedResponse("");
                 setConversation([...conversation]);
             },
-            onPermissionRequest: async (toolName, args) => {
-                setAgentState("awaiting_permission");
+            onPermissionRequest: async (tool) => {
+                setToolExecutions(prev => prev.map(t => t.call_id === tool.call_id ? { ...t, status: "awaiting_permission" } : t));
                 return new Promise<boolean>((resolve) => {
                     setPermissionRequest({
-                        toolName,
-                        args,
+                        tool,
                         resolve: (allow: boolean) => {
                             setPermissionRequest(null);
-                            setAgentState("thinking");
+                            setToolExecutions(prev => prev.map(t => t.call_id === tool.call_id ? { ...t, status: "running" } : t));
                             resolve(allow);
                         }
                     });
@@ -75,25 +77,25 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 setError(error.message);
             },
             onToolStart: (tool) => {
-                setAgentState("tool_running");
                 setToolExecutions(prev => [
                     ...prev,
                     {
                         call_id: tool.call_id,
                         name: tool.name,
                         args: JSON.parse(tool.arguments),
+                        status: "running"
                     }
                 ]);
             },
             onToolEnd: (call_id) => {
-                setAgentState("thinking");
                 setToolExecutions(prev =>
                     prev.filter(tool => tool.call_id !== call_id)
                 );
             }
         });
 
-        setAgentState("idle");
+        setTurnState("idle");
+        setIsGenerating(false);
         setStreamedResponse("");
         setToolExecutions([]);
     };
@@ -105,7 +107,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     }, []);
 
     return (
-        <Box flexDirection="column" padding={1}>
+        <Box flexDirection="column" paddingX={1}>
 
             <Box
                 borderStyle="round"
@@ -113,7 +115,6 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 padding={1}
                 paddingX={2}
                 flexDirection="row"
-                marginBottom={1}
             >
                 <Box flexDirection="column" width="50%" alignItems="center" justifyContent="center">
                     <Text bold color="#F2F0EB">Welcome to Forge Code!</Text>
@@ -169,7 +170,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     if (anyMsg.role === 'assistant' && typeof anyMsg.content === 'string' && anyMsg.content.trim()) {
                         return (
                             <Box key={`msg-${index}`} flexDirection="column">
-                                <Text color="#F2F0EB">{anyMsg.content.trim()}</Text>
+                                <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{anyMsg.content.trim()}</Text>
                             </Box>
                         );
                     }
@@ -179,26 +180,26 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
             {streamedResponse.trim() && (
                 <Box flexDirection="column">
-                    <Text color="#F2F0EB">{streamedResponse.trim()}</Text>
+                    <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{streamedResponse.trim()}</Text>
                 </Box>
             )}
 
-            {agentState == "tool_running" && (
-                <>
+            {toolExecutions.length > 0 && (
+                <Box flexDirection="column">
                     {toolExecutions.map((tool, index) => (
                         <ToolExecutionView
                             key={`tool-${index}`}
                             name={tool.name}
                             args={tool.args}
-                            status="running"
+                            status={tool.status}
                         />
                     ))}
-                </>
+                </Box>
             )}
 
-            {agentState == "thinking" && (
-                <Box flexDirection="column">
-                    <Text color="#8A8578">
+            {isGenerating && (
+                <Box flexDirection="column" marginTop={1}>
+                    <Text color="#ffffffff">
                         <Spinner type="dots" /> Thinking...
                     </Text>
                 </Box>
@@ -212,13 +213,13 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
             {permissionRequest && (
                 <PermissionPrompt
-                    toolName={permissionRequest.toolName}
-                    args={permissionRequest.args}
+                    toolName={permissionRequest.tool.name}
+                    args={JSON.parse(permissionRequest.tool.arguments)}
                     onResolve={permissionRequest.resolve}
                 />
             )}
 
-            {agentState !== "awaiting_permission" && (
+            {!permissionRequest && (
                 <Box flexDirection="column" marginTop={1}>
                     <Box borderStyle="round" borderColor="#8A8578" paddingX={1}>
                         <Text color="#E8722C">❯ </Text>
@@ -226,7 +227,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                             value={input}
                             onChange={setInput}
                             onSubmit={(val: string) => {
-                                if (agentState !== "idle") return;
+                                if (turnState !== "idle") return;
                                 setInput("");
                                 handleSubmit(val);
                             }}
