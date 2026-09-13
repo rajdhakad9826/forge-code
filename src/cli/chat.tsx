@@ -7,6 +7,33 @@ import { SYSTEM_PROMPT } from "../agent/instructions.js";
 import type { ConversationItem, FunctionToolCall } from "../llm/types.js";
 import { PermissionPrompt } from "./PermissionPrompt.js";
 import { ToolExecutionView } from "./ToolExecutionView.js";
+import { marked } from "marked";
+import { markedTerminal } from 'marked-terminal';
+import chalk from "chalk";
+
+marked.use(markedTerminal({
+    showSectionPrefix: false,
+    heading: chalk.bold,
+    firstHeading: chalk.bold,
+    strong: chalk.bold,
+    em: chalk.italic,
+    paragraph: chalk.reset,
+    listitem: chalk.reset,
+    blockquote: chalk.dim.italic,
+    codespan: chalk.hex('#E8722C'),
+    code: chalk.hex('#E8722C'),
+    link: chalk.hex('#E8722C'),
+    href: chalk.hex('#E8722C').underline,
+    del: chalk.hex('#8A8578').strikethrough,
+    hr: chalk.hex('#8A8578'),
+    tableOptions: {
+        style: {
+            head: [],
+            border: [],
+        },
+    },
+
+}) as any);
 
 const TextInput = _TextInput as any;
 
@@ -169,8 +196,8 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     }
                     if (anyMsg.role === 'assistant' && typeof anyMsg.content === 'string' && anyMsg.content.trim()) {
                         return (
-                            <Box key={`msg-${index}`} flexDirection="column">
-                                <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{anyMsg.content.trim()}</Text>
+                            <Box key={`msg-${index}`} flexDirection="column" marginTop={1}>
+                                <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{marked.parse(anyMsg.content).trim()}</Text>
                             </Box>
                         );
                     }
