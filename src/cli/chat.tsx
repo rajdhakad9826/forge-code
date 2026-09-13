@@ -107,7 +107,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     }, []);
 
     return (
-        <Box flexDirection="column" padding={1}>
+        <Box flexDirection="column" paddingX={1}>
 
             <Box
                 borderStyle="round"
@@ -115,7 +115,6 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 padding={1}
                 paddingX={2}
                 flexDirection="row"
-                marginBottom={1}
             >
                 <Box flexDirection="column" width="50%" alignItems="center" justifyContent="center">
                     <Text bold color="#F2F0EB">Welcome to Forge Code!</Text>
@@ -171,7 +170,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     if (anyMsg.role === 'assistant' && typeof anyMsg.content === 'string' && anyMsg.content.trim()) {
                         return (
                             <Box key={`msg-${index}`} flexDirection="column">
-                                <Text color="#F2F0EB">{anyMsg.content.trim()}</Text>
+                                <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{anyMsg.content.trim()}</Text>
                             </Box>
                         );
                     }
@@ -181,7 +180,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
             {streamedResponse.trim() && (
                 <Box flexDirection="column">
-                    <Text color="#F2F0EB">{streamedResponse.trim()}</Text>
+                    <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{streamedResponse.trim()}</Text>
                 </Box>
             )}
 
@@ -199,8 +198,8 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
             )}
 
             {isGenerating && (
-                <Box flexDirection="column">
-                    <Text color="#8A8578">
+                <Box flexDirection="column" marginTop={1}>
+                    <Text color="#ffffffff">
                         <Spinner type="dots" /> Thinking...
                     </Text>
                 </Box>

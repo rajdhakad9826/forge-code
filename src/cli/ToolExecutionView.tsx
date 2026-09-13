@@ -22,10 +22,10 @@ export function ToolExecutionView({ name, args, status }: { name: string, args: 
     return (
         <Box flexDirection="column">
             <Box flexDirection="row">
-                {status === "running" && <Text color="#8A8578"><Spinner type="dots" /> </Text>}
-                {status === "completed" && <Text color="#A3BE8C">✓ </Text>}
-                {status === "awaiting_permission" && <Text color="#EBCB8B">◍ </Text>}
-                {status === "failed" && <Text color="#BF616A">✗ </Text>}
+                {status === "running" && <Text color="#8A8578">  <Spinner type="dots" />  </Text>}
+                {status === "completed" && <Text color="#A3BE8C">  ✓  </Text>}
+                {status === "awaiting_permission" && <Text color="#EBCB8B">  ◍  </Text>}
+                {status === "failed" && <Text color="#BF616A">  ✗  </Text>}
                 <Text bold color="#F2F0EB">{name} </Text>
                 <Text color="#8A8578">{argsStr}</Text>
             </Box>
