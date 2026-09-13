@@ -20,10 +20,10 @@ marked.use(markedTerminal({
     paragraph: chalk.reset,
     listitem: chalk.reset,
     blockquote: chalk.dim.italic,
-    codespan: chalk.hex('#E8722C'),
-    code: chalk.hex('#E8722C'),
-    link: chalk.hex('#E8722C'),
-    href: chalk.hex('#E8722C').underline,
+    codespan: chalk.hex('#FFB454'),
+    code: chalk.hex('#FFB454'),
+    link: chalk.hex('#FFB454'),
+    href: chalk.hex('#FFB454').underline,
     del: chalk.hex('#8A8578').strikethrough,
     hr: chalk.hex('#8A8578'),
     tableOptions: {
@@ -206,7 +206,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
             </Box>
 
             {streamedResponse.trim() && (
-                <Box flexDirection="column">
+                <Box flexDirection="column" marginTop={1}>
                     <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{streamedResponse.trim()}</Text>
                 </Box>
             )}
