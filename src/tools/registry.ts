@@ -9,6 +9,7 @@ export const toolRegistry: ToolRegistry = {
     get_current_time: {
         description: "Get the current date and time in ISO 8601 format.",
         callback: get_current_time,
+        requiresPermission: false
     },
     read_file: {
         description: "Read the complete UTF-8 text contents of a file from the current workspace. Returns the file contents as a string.",
@@ -19,7 +20,8 @@ export const toolRegistry: ToolRegistry = {
                 description: "The relative or absolute path of the file to read."
             }
         ],
-        callback: read_file
+        callback: read_file,
+        requiresPermission: false
     },
     write_file: {
         description: "Write UTF-8 text to a file in the current workspace. Creates the file if it does not exist and overwrites any existing contents.",
@@ -35,7 +37,8 @@ export const toolRegistry: ToolRegistry = {
                 description: "The relative or absolute path of the file to write."
             }
         ],
-        callback: write_file
+        callback: write_file,
+        requiresPermission: true
     },
     list_directory: {
         description: "List the immediate contents of a directory (non-recursive). Returns one entry per line, with directories prefixed by [DIR]. Use this tool to explore the workspace before reading files.",
@@ -46,7 +49,8 @@ export const toolRegistry: ToolRegistry = {
                 description: "The relative or absolute path of the directory to list. Defaults to the current working directory."
             }
         ],
-        callback: list_directory
+        callback: list_directory,
+        requiresPermission: false
     },
     execute_shell: {
         description: "Execute a shell command in the current workspace and return its standard output or error output.",
@@ -57,7 +61,8 @@ export const toolRegistry: ToolRegistry = {
                 description: "The shell command to execute."
             },
         ],
-        callback: execute_shell
+        callback: execute_shell,
+        requiresPermission: true
     }
 }
 
