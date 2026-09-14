@@ -10,6 +10,9 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
             const args = JSON.parse(tool.arguments);
             const toolName = tool.name;
 
+            if (!toolRegistry[toolName])
+                throw new Error(`Tool "${toolName}" does not exist.`);
+
             onToolStart(tool)
             started = true;
 
@@ -23,8 +26,6 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
                 });
                 continue;
             }
-            if (!toolRegistry[toolName])
-                throw new Error(`Tool "${toolName}" does not exist.`);
 
             const toolResult = await toolRegistry[toolName].callback(args);
 
