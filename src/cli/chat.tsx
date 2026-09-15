@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { render, Box, Text } from "ink";
+import { render, Box, Text, useInput } from "ink";
 import _TextInput from "ink-text-input";
 import Spinner from "ink-spinner";
 import { runAgent } from "../agent/run.js";
@@ -10,6 +10,8 @@ import { ToolExecutionView } from "./ToolExecutionView.js";
 import { marked } from "marked";
 import { markedTerminal } from 'marked-terminal';
 import chalk from "chalk";
+import { abortConnection } from "../llm/generate.js";
+import { exit } from "node:process";
 
 marked.use(markedTerminal({
     showSectionPrefix: false,
@@ -55,6 +57,15 @@ type ToolExecution = {
 type TurnState = "idle" | "active";
 
 const App = ({ initialPrompt }: { initialPrompt?: string }) => {
+
+    useInput((input, key) => {
+        if (key.ctrl && input === 'c')
+            abortConnection();
+
+        if (key.ctrl && input === 'c' && turnState === "idle")
+            exit();
+    })
+
     const [conversation, setConversation] = useState<ConversationItem[]>([
         { role: "system", content: SYSTEM_PROMPT },
     ]);
@@ -64,6 +75,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [permissionRequest, setPermissionRequest] = useState<{ tool: FunctionToolCall, resolve: (allow: boolean) => void } | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [cancelled, setCancelled] = useState(false);
     const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
 
     const handleSubmit = async (query: string) => {
@@ -118,7 +130,8 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 setToolExecutions(prev =>
                     prev.filter(tool => tool.call_id !== call_id)
                 );
-            }
+            },
+            onCancelled: () => setCancelled(true),
         });
 
         setTurnState("idle");
@@ -238,6 +251,12 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 </Box>
             )}
 
+            {cancelled && (
+                <Box marginY={1}>
+                    <Text color="#ded3c5ff">⊘ Request cancelled.</Text>
+                </Box>
+            )}
+
             {permissionRequest && (
                 <PermissionPrompt
                     toolName={permissionRequest.tool.name}
@@ -268,6 +287,6 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 };
 
 export async function startChat(initialPrompt?: string) {
-    const { waitUntilExit } = render(<App initialPrompt={initialPrompt} />);
+    const { waitUntilExit } = render(<App initialPrompt={initialPrompt} />, { exitOnCtrlC: false });
     await waitUntilExit();
 }

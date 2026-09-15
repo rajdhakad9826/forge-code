@@ -1,9 +1,9 @@
-import { ConversationItem, FunctionToolCall } from "../llm/types.js";
+import { ConversationItem, FunctionToolCall, GenerationAbortedError } from "../llm/types.js";
 import { generate } from "../llm/generate.js";
 import { execute_tools } from "./execute_tools.js";
 import type { agentCallbacks } from "./types.js";
 
-export async function runAgent(conversation: ConversationItem[], { onTextDelta, onConversationUpdate, onPermissionRequest, onError, onToolStart, onToolEnd, onGenerateStart, onGenerateEnd }: agentCallbacks) {
+export async function runAgent(conversation: ConversationItem[], { onTextDelta, onConversationUpdate, onPermissionRequest, onError, onToolStart, onToolEnd, onGenerateStart, onGenerateEnd, onCancelled }: agentCallbacks) {
     let iteration = 0;
     let MAX_ITERATIONS = 25;
     try {
@@ -28,6 +28,8 @@ export async function runAgent(conversation: ConversationItem[], { onTextDelta, 
             }
         }
     } catch (error) {
+        if (error instanceof GenerationAbortedError)
+            onCancelled?.();
         onError(error instanceof Error ? error : new Error(String(error)));
     }
 

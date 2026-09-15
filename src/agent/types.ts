@@ -8,5 +8,6 @@ export interface agentCallbacks {
     onToolStart: (tool: FunctionToolCall) => void,
     onToolEnd: (call_id: string) => void,
     onGenerateStart?: () => void,
-    onGenerateEnd?: () => void
+    onGenerateEnd?: () => void,
+    onCancelled?: () => void
 }

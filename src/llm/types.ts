@@ -4,3 +4,5 @@ import { ResponseFunctionToolCall } from "openai/resources/responses/responses.m
 export type ConversationItem = ResponseInputItem;
 
 export type FunctionToolCall = ResponseFunctionToolCall
+
+export class GenerationAbortedError extends Error { }
