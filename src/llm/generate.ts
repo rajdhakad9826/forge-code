@@ -1,7 +1,7 @@
 import { client } from "./client.js";
 import { ConversationItem, FunctionToolCall, GenerationAbortedError } from "./types.js";
 import { toolDefinitions } from "../tools/definitions.js";
-import { MODEL } from "../config/llm.js";
+import { getModel } from "../config/llm.js";
 import OpenAI from "openai";
 
 let controller: AbortController | null = null;
@@ -14,7 +14,7 @@ export async function generate(conversation: ConversationItem[], onTextDelta: (d
     controller = new AbortController();
     try {
         const stream = await client.responses.create({
-            model: MODEL,
+            model: getModel(),
             input: conversation,
             tools: toolDefinitions,
             stream: true,

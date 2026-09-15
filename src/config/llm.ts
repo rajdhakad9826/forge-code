@@ -1,2 +1,10 @@
-export const MODEL = "inclusionai/ling-3.0-flash-vl:free"
-// "nvidia/nemotron-3-ultra-550b-a55b:free";
+import dotenv from "dotenv"
+dotenv.config()
+
+export function getModel() {
+    const MODEL = process.env.MODEL
+    const DEFAULT_MODEL = "inclusionai/ling-3.0-flash-vl:free"
+    if (MODEL)
+        return MODEL;
+    return DEFAULT_MODEL;
+}
