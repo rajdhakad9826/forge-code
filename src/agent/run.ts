@@ -4,9 +4,12 @@ import { execute_tools } from "./execute_tools.js";
 import type { agentCallbacks } from "./types.js";
 
 export async function runAgent(conversation: ConversationItem[], { onTextDelta, onConversationUpdate, onPermissionRequest, onError, onToolStart, onToolEnd, onGenerateStart, onGenerateEnd }: agentCallbacks) {
+    let iteration = 0;
+    let MAX_ITERATIONS = 25;
     try {
         const agentConversation: ConversationItem[] = [...conversation];
-        while (true) {
+        while (iteration < MAX_ITERATIONS) {
+            iteration++;
             onGenerateStart?.();
             const output = await generate(agentConversation, onTextDelta);
             onGenerateEnd?.();
