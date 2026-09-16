@@ -1,8 +1,9 @@
 import { client } from "./client.js";
-import { ConversationItem, FunctionToolCall, GenerationAbortedError } from "./types.js";
+import { ConversationItem, FunctionToolCall, GenerationAbortedError, TokenUsage } from "./types.js";
 import { toolDefinitions } from "../tools/definitions.js";
 import { getModel } from "../config/llm.js";
 import OpenAI from "openai";
+import { estimateConversationTokens } from "./tokens.js";
 
 let controller: AbortController | null = null;
 
@@ -10,7 +11,7 @@ export function abortConnection() {
     controller?.abort();
 }
 
-export async function generate(conversation: ConversationItem[], onTextDelta: (delta: string) => void): Promise<ConversationItem[]> {
+export async function generate(conversation: ConversationItem[], onTextDelta: (delta: string) => void, onUsage: (usage: TokenUsage) => void): Promise<ConversationItem[]> {
     controller = new AbortController();
     try {
         const stream = await client.responses.create({
@@ -47,10 +48,21 @@ export async function generate(conversation: ConversationItem[], onTextDelta: (d
                     throw new Error(event.response?.error?.message ?? "LLM request failed.");
                 case "response.completed":
                     const toolCalls = Object.values(finalToolCalls);
-                    return [
+                    const output = [
                         ...assistantMessage,
                         ...toolCalls
                     ]
+                    const inputTokens = event.response.usage?.input_tokens ?? estimateConversationTokens(conversation)
+                    const outputTokens = event.response.usage?.output_tokens ?? estimateConversationTokens(output)
+                    const total = event.response.usage?.total_tokens ?? inputTokens + outputTokens
+
+                    onUsage({
+                        inputTokens,
+                        outputTokens,
+                        total
+                    })
+
+                    return output;
             }
         }
     } catch (error) {

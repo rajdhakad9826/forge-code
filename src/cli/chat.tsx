@@ -4,7 +4,7 @@ import _TextInput from "ink-text-input";
 import Spinner from "ink-spinner";
 import { runAgent } from "../agent/run.js";
 import { SYSTEM_PROMPT } from "../agent/instructions.js";
-import type { ConversationItem, FunctionToolCall } from "../llm/types.js";
+import type { ConversationItem, FunctionToolCall, TokenUsage } from "../llm/types.js";
 import { PermissionPrompt } from "./PermissionPrompt.js";
 import { ToolExecutionView } from "./ToolExecutionView.js";
 import { marked } from "marked";
@@ -77,6 +77,11 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const [error, setError] = useState<string | null>(null);
     const [cancelled, setCancelled] = useState(false);
     const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
+    const [tokenUsage, setTokenUsage] = useState<TokenUsage>({
+        inputTokens: 0,
+        outputTokens: 0,
+        total: 0
+    })
 
     const handleSubmit = async (query: string) => {
         if (!query.trim()) return;
@@ -132,6 +137,9 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 );
             },
             onCancelled: () => setCancelled(true),
+            onUsage: (usage: TokenUsage) => {
+                setTokenUsage(usage)
+            }
         });
 
         setTurnState("idle");

@@ -3,7 +3,7 @@ import { generate } from "../llm/generate.js";
 import { execute_tools } from "./execute_tools.js";
 import type { agentCallbacks } from "./types.js";
 
-export async function runAgent(conversation: ConversationItem[], { onTextDelta, onConversationUpdate, onPermissionRequest, onError, onToolStart, onToolEnd, onGenerateStart, onGenerateEnd, onCancelled }: agentCallbacks) {
+export async function runAgent(conversation: ConversationItem[], { onTextDelta, onConversationUpdate, onPermissionRequest, onError, onToolStart, onToolEnd, onGenerateStart, onGenerateEnd, onCancelled, onUsage }: agentCallbacks) {
     let iteration = 0;
     let MAX_ITERATIONS = 25;
     try {
@@ -11,7 +11,7 @@ export async function runAgent(conversation: ConversationItem[], { onTextDelta, 
         while (iteration < MAX_ITERATIONS) {
             iteration++;
             onGenerateStart?.();
-            const output = await generate(agentConversation, onTextDelta);
+            const output = await generate(agentConversation, onTextDelta, onUsage);
             onGenerateEnd?.();
             const toolCalls = output.filter(
                 (item): item is FunctionToolCall =>

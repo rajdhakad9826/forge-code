@@ -6,3 +6,9 @@ export type ConversationItem = ResponseInputItem;
 export type FunctionToolCall = ResponseFunctionToolCall
 
 export class GenerationAbortedError extends Error { }
+
+export type TokenUsage = {
+    inputTokens: number;
+    outputTokens: number;
+    total: number;
+}

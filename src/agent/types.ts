@@ -1,4 +1,4 @@
-import { ConversationItem, FunctionToolCall } from "../llm/types.js";
+import { ConversationItem, FunctionToolCall, TokenUsage } from "../llm/types.js";
 
 export interface agentCallbacks {
     onTextDelta: (delta: string) => void,
@@ -9,5 +9,6 @@ export interface agentCallbacks {
     onToolEnd: (call_id: string) => void,
     onGenerateStart?: () => void,
     onGenerateEnd?: () => void,
-    onCancelled?: () => void
+    onCancelled?: () => void,
+    onUsage: (usage: TokenUsage) => void,
 }
