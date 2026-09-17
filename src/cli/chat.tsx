@@ -12,6 +12,8 @@ import { markedTerminal } from 'marked-terminal';
 import chalk from "chalk";
 import { abortConnection } from "../llm/generate.js";
 import { exit } from "node:process";
+import { getModel } from "../config/llm.js";
+import { getContextWindow } from "../config/models.js";
 
 marked.use(markedTerminal({
     showSectionPrefix: false,
@@ -77,6 +79,8 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const [error, setError] = useState<string | null>(null);
     const [cancelled, setCancelled] = useState(false);
     const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
+    const [model, setModel] = useState<string>("");
+    const [modelContextWindow, setModelContextWindow] = useState<number>(0);
     const [tokenUsage, setTokenUsage] = useState<TokenUsage>({
         inputTokens: 0,
         outputTokens: 0,
@@ -149,6 +153,9 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     };
 
     useEffect(() => {
+        const currentModel = getModel();
+        setModel(currentModel);
+        getContextWindow(currentModel).then(setModelContextWindow);
         if (initialPrompt) {
             handleSubmit(initialPrompt);
         }
