@@ -68,9 +68,8 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
             exit();
     })
 
-    const [conversation, setConversation] = useState<ConversationItem[]>([
-        { role: "system", content: SYSTEM_PROMPT },
-    ]);
+    const [conversation, setConversation] = useState<ConversationItem[]>([]);
+    const [contextConversation, setContextConversation] = useState<ConversationItem[]>([{ role: "system", content: SYSTEM_PROMPT }]);
     const [input, setInput] = useState("");
     const [streamedResponse, setStreamedResponse] = useState("");
     const [turnState, setTurnState] = useState<TurnState>("idle")
@@ -90,23 +89,27 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const handleSubmit = async (query: string) => {
         if (!query.trim()) return;
 
-        const newConversation: ConversationItem[] = [...conversation, { role: "user", content: query }];
+        const userQuery: ConversationItem = { role: "user", content: query }
+        const newConversation: ConversationItem[] = [...conversation, userQuery];
         setConversation(newConversation);
+        const newContext: ConversationItem[] = [...contextConversation, userQuery];
+        setContextConversation(newContext);
         setTurnState("active");
         setIsGenerating(false);
         setStreamedResponse("");
         setError(null);
         setToolExecutions([]);
 
-        await runAgent(newConversation, {
+        await runAgent(newContext, modelContextWindow, {
             onGenerateStart: () => setIsGenerating(true),
             onGenerateEnd: () => setIsGenerating(false),
             onTextDelta: (delta: string) => {
                 setStreamedResponse(prev => prev + delta);
             },
-            onConversationUpdate: (conversation: ConversationItem[]) => {
+            onConversationUpdate: (context: ConversationItem[], newOutputs: ConversationItem[]) => {
                 setStreamedResponse("");
-                setConversation([...conversation]);
+                setContextConversation([...context]);
+                setConversation(prev => [...prev, ...newOutputs]);
             },
             onPermissionRequest: async (tool) => {
                 setToolExecutions(prev => prev.map(t => t.call_id === tool.call_id ? { ...t, status: "awaiting_permission" } : t));
