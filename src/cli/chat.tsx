@@ -39,6 +39,15 @@ marked.use(markedTerminal({
 
 }) as any);
 
+const tokenFormatter = new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+});
+
+export function formatTokens(tokens: number): string {
+    return tokenFormatter.format(tokens);
+}
+
 const TextInput = _TextInput as any;
 
 const logo = `
@@ -282,25 +291,30 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     onResolve={permissionRequest.resolve}
                 />
             )}
-
-            {!permissionRequest && (
-                <Box flexDirection="column" marginTop={1}>
-                    <Box borderStyle="round" borderColor="#8A8578" paddingX={1}>
-                        <Text color="#E8722C">❯ </Text>
-                        <TextInput
-                            value={input}
-                            onChange={setInput}
-                            onSubmit={(val: string) => {
-                                if (turnState !== "idle") return;
-                                setInput("");
-                                handleSubmit(val);
-                            }}
-                        />
+            <Box marginTop={1}>
+                <Text color="#FFB454">{model}</Text>
+                <Text color="#8A8578"> · {formatTokens(tokenUsage.total)}/{formatTokens(modelContextWindow)} ({(tokenUsage.total / modelContextWindow * 100).toFixed(2)}%)</Text>
+            </Box>
+            {
+                !permissionRequest && (
+                    <Box flexDirection="column">
+                        <Box borderStyle="round" borderColor="#8A8578" paddingX={1}>
+                            <Text color="#E8722C">❯ </Text>
+                            <TextInput
+                                value={input}
+                                onChange={setInput}
+                                onSubmit={(val: string) => {
+                                    if (turnState !== "idle") return;
+                                    setInput("");
+                                    handleSubmit(val);
+                                }}
+                            />
+                        </Box>
                     </Box>
-                </Box>
-            )}
+                )
+            }
 
-        </Box>
+        </Box >
     );
 };
 
