@@ -167,10 +167,17 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     useEffect(() => {
         const currentModel = getModel();
         setModel(currentModel);
-        getContextWindow(currentModel).then(setModelContextWindow);
-        if (initialPrompt) {
-            handleSubmit(initialPrompt);
-        }
+        getContextWindow(currentModel)
+            .then(window => {
+                setModelContextWindow(window);
+                if (initialPrompt) {
+                    handleSubmit(initialPrompt);
+                }
+            })
+            .catch(err => {
+                setError(err.message);
+                setModelContextWindow(8000);
+            });
     }, []);
 
     return (
