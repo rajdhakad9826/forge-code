@@ -2,7 +2,7 @@ const contextWindowCache = new Map<string, number>();
 
 const DEFAULT_CONTEXT_WINDOW = 8000;
 
-class ModelNotFoundError extends Error { }
+export class ModelNotFoundError extends Error { }
 
 export async function getContextWindow(model: string): Promise<number> {
     const cached = contextWindowCache.get(model);

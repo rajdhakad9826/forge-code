@@ -14,6 +14,7 @@ import { abortConnection } from "../llm/generate.js";
 import { exit } from "node:process";
 import { getModel } from "../config/llm.js";
 import { getContextWindow } from "../config/models.js";
+import { commandRegistry } from "../commands/registry.js";
 
 marked.use(markedTerminal({
     showSectionPrefix: false,
@@ -89,11 +90,40 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
     const [model, setModel] = useState<string>("");
     const [modelContextWindow, setModelContextWindow] = useState<number>(0);
+    const [commandOutput, setCommandOutput] = useState<string[]>([]);
     const [tokenUsage, setTokenUsage] = useState<TokenUsage>({
         inputTokens: 0,
         outputTokens: 0,
         total: 0
     })
+
+    const handleCommand = async (input: string) => {
+        const [name, ...args] = input.slice(1).trim().split(/\s+/);
+        const command = commandRegistry[name];
+
+        if (!command) {
+            setCommandOutput([`Unknown command: /${name}`]);
+            return;
+        }
+
+        try {
+            const output = await command.callback(
+                args.join(" "),
+                { setModel, setModelContextWindow }
+            );
+
+            setCommandOutput(
+                output === undefined
+                    ? []
+                    : Array.isArray(output) ? output : [output]);
+        } catch (error) {
+            setCommandOutput([
+                error instanceof Error
+                    ? error.message
+                    : String(error)
+            ]);
+        }
+    };
 
     const handleSubmit = async (query: string) => {
         if (!query.trim()) return;
@@ -298,6 +328,12 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     onResolve={permissionRequest.resolve}
                 />
             )}
+            <Box flexDirection="column" marginTop={1}>
+                {commandOutput.map((output, index) => {
+                    return <Text color="#FFB454" key={`command-${index}`}>{output}</Text>
+                })}
+            </Box>
+
             <Box marginTop={1}>
                 <Text color="#FFB454">{model}</Text>
                 <Text color="#8A8578"> · {formatTokens(tokenUsage.total)}/{formatTokens(modelContextWindow)} ({(tokenUsage.total / modelContextWindow * 100).toFixed(2)}%)</Text>
@@ -313,7 +349,10 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                                 onSubmit={(val: string) => {
                                     if (turnState !== "idle") return;
                                     setInput("");
-                                    handleSubmit(val);
+                                    if (val.startsWith("/"))
+                                        handleCommand(val);
+                                    else
+                                        handleSubmit(val);
                                 }}
                             />
                         </Box>
