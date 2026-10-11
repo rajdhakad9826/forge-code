@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { render, Box, Text, useInput } from "ink";
+import { render, Box, Text, useInput, Static } from "ink";
 import _TextInput from "ink-text-input";
 import Spinner from "ink-spinner";
 import { runAgent } from "../agent/run.js";
@@ -32,6 +32,44 @@ type ToolExecution = {
     status: ToolStatus;
 };
 
+export type FeedItem =
+    | {
+        id: string;
+        type: "user";
+        content: string;
+    }
+    | {
+        id: string;
+        type: "assistant";
+        content: string;
+    }
+    | {
+        id: string;
+        type: "command";
+        command: string;
+        output: string[];
+    }
+    | {
+        id: string;
+        type: "tool_execution";
+        callId: string;
+        name: string;
+        args: any;
+        status: ToolStatus;
+        result?: string;
+    }
+    | {
+        id: string;
+        type: "notice";
+        kind: "cancelled" | "info" | "warning";
+        message: string;
+    }
+    | {
+        id: string;
+        type: "error";
+        message: string;
+    };
+
 type TurnState = "idle" | "active";
 
 const App = ({ initialPrompt }: { initialPrompt?: string }) => {
@@ -44,19 +82,19 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
             exit();
     })
 
-    const [conversation, setConversation] = useState<ConversationItem[]>([]);
-    const [contextConversation, setContextConversation] = useState<ConversationItem[]>([{ role: "system", content: SYSTEM_PROMPT }]);
+    const [feed, setFeed] = useState<FeedItem[]>([]);
+    const [llmContext, setLlmContext] = useState<ConversationItem[]>([
+        { role: "system", content: SYSTEM_PROMPT }
+    ]);
+
     const [input, setInput] = useState("");
     const [streamedResponse, setStreamedResponse] = useState("");
     const [turnState, setTurnState] = useState<TurnState>("idle")
     const [isGenerating, setIsGenerating] = useState(false);
     const [permissionRequest, setPermissionRequest] = useState<{ tool: FunctionToolCall, resolve: (allow: boolean) => void } | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [cancelled, setCancelled] = useState(false);
     const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
     const [model, setModel] = useState<string>("");
     const [modelContextWindow, setModelContextWindow] = useState<number>(0);
-    const [commandOutput, setCommandOutput] = useState<string[]>([]);
     const [tokenUsage, setTokenUsage] = useState<TokenUsage>({
         inputTokens: 0,
         outputTokens: 0,
@@ -65,10 +103,13 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
     const handleCommand = async (input: string) => {
         const [name, ...args] = input.slice(1).trim().split(/\s+/);
-        const command = commandRegistry[name];
 
+        const command = commandRegistry[name];
         if (!command) {
-            setCommandOutput([`Unknown command: /${name}`]);
+            setFeed(prev => [
+                ...prev,
+                { id: crypto.randomUUID(), type: "command", command: input, output: [`Unknown command: /${name}`] }
+            ]);
             return;
         }
 
@@ -78,43 +119,62 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 { setModel, setModelContextWindow }
             );
 
-            setCommandOutput(
-                output === undefined
-                    ? []
-                    : Array.isArray(output) ? output : [output]);
-        } catch (error) {
-            setCommandOutput([
-                error instanceof Error
-                    ? error.message
-                    : String(error)
+            setFeed(prev => [
+                ...prev,
+                { id: crypto.randomUUID(), type: "command", command: input, output: Array.isArray(output) ? output : [output] }
             ]);
+
+        } catch (error: any) {
+            setFeed(prev => [
+                ...prev,
+                { id: crypto.randomUUID(), type: "error", message: error.message || String(error) }
+            ])
         }
     };
 
     const handleSubmit = async (query: string) => {
         if (!query.trim()) return;
 
-        const userQuery: ConversationItem = { role: "user", content: query }
-        const newConversation: ConversationItem[] = [...conversation, userQuery];
-        setConversation(newConversation);
-        const newContext: ConversationItem[] = [...contextConversation, userQuery];
-        setContextConversation(newContext);
+        const userMsg: ConversationItem = { role: "user", content: query }
+        const newLlmContext: ConversationItem[] = [...llmContext, userMsg]
+        setLlmContext(newLlmContext)
+        setFeed(prev => [...prev, { id: crypto.randomUUID(), type: "user", content: query }])
+
         setTurnState("active");
         setIsGenerating(false);
         setStreamedResponse("");
-        setError(null);
         setToolExecutions([]);
 
-        await runAgent(newContext, modelContextWindow, {
+        await runAgent(newLlmContext, modelContextWindow, {
             onGenerateStart: () => setIsGenerating(true),
             onGenerateEnd: () => setIsGenerating(false),
             onTextDelta: (delta: string) => {
                 setStreamedResponse(prev => prev + delta);
             },
-            onConversationUpdate: (context: ConversationItem[], newOutputs: ConversationItem[]) => {
-                setStreamedResponse("");
-                setContextConversation([...context]);
-                setConversation(prev => [...prev, ...newOutputs]);
+            onConversationUpdate: (updatedContext: ConversationItem[], newOutputs: ConversationItem[]) => {
+                setStreamedResponse("")
+                setLlmContext([...updatedContext])
+
+                for (const item of newOutputs) {
+                    const anyItem = item as any;
+                    if ((anyItem as any).type === "function_call") {
+                        setFeed(prev => [...prev, {
+                            id: (item as any).call_id,
+                            type: "tool_execution",
+                            callId: (item as any).call_id,
+                            name: (item as any).name,
+                            args: JSON.parse((item as any).arguments || "{}"),
+                            status: "completed"
+                        }]);
+                    } else if (anyItem.role === "assistant" && typeof anyItem.content === "string" && anyItem.content.trim()) {
+                        setFeed(prev => [...prev, {
+                            id: crypto.randomUUID(),
+                            type: "assistant",
+                            content: anyItem.content
+                        }])
+                    }
+                }
+
             },
             onPermissionRequest: async (tool) => {
                 setToolExecutions(prev => prev.map(t => t.call_id === tool.call_id ? { ...t, status: "awaiting_permission" } : t));
@@ -130,7 +190,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 });
             },
             onError: (error: Error) => {
-                setError(error.message);
+                setFeed(prev => [...prev, { id: crypto.randomUUID(), type: "error", message: error.message }]);
             },
             onToolStart: (tool) => {
                 setToolExecutions(prev => [
@@ -148,7 +208,9 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     prev.filter(tool => tool.call_id !== call_id)
                 );
             },
-            onCancelled: () => setCancelled(true),
+            onCancelled: () => {
+                setFeed(prev => [...prev, { id: crypto.randomUUID(), type: "notice", kind: "cancelled", message: "⊘ Request cancelled." }]);
+            },
             onUsage: (usage: TokenUsage) => {
                 setTokenUsage(usage)
             }
@@ -171,10 +233,62 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 }
             })
             .catch(err => {
-                setError(err.message);
+                setFeed(prev => [...prev, { id: crypto.randomUUID(), type: "error", message: err.message }]);
                 setModelContextWindow(8000);
             });
     }, []);
+
+    function FeedItemView({ item }: { item: FeedItem }) {
+        switch (item.type) {
+            case "user":
+                return (
+                    <Box marginY={1}>
+                        <Text color="#FFB454"><Text color="#E8722C">❯ </Text>{item.content}</Text>
+                    </Box>
+                );
+
+            case "command":
+                return (
+                    <Box flexDirection="column" marginY={1}>
+                        <Text color="#8A8578"><Text color="#E8722C">❯ </Text>{item.command}</Text>
+                        {item.output.map((line, idx) => (
+                            <Text color="#FFB454" key={idx}>{line}</Text>
+                        ))}
+                    </Box>
+                );
+
+            case "assistant":
+                return (
+                    <Box flexDirection="column" marginTop={1}>
+                        <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{renderMarkdown(item.content)}</Text>
+                    </Box>
+                );
+
+            case "tool_execution":
+                return (
+                    <ToolExecutionView
+                        name={item.name}
+                        args={item.args}
+                        status={item.status}
+                    />
+                );
+
+            case "notice":
+                return (
+                    <Box marginY={1}>
+                        <Text color="#ded3c5ff">{item.message}</Text>
+                    </Box>
+                );
+
+            case "error":
+                return (
+                    <Box flexDirection="column" marginY={1}>
+                        <Text color="#BF616A">✗ Error: {item.message}</Text>
+                    </Box>
+                );
+        }
+    }
+
 
     return (
         <Box flexDirection="column" paddingX={1}>
@@ -213,40 +327,9 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 </Box>
             </Box>
 
-            <Box flexDirection="column">
-                {conversation.filter(c => (c as any).role !== 'system').map((msg, index) => {
-                    const anyMsg = msg as any;
-                    if (anyMsg.role === 'user') {
-                        return (
-                            <Box key={`msg-${index}`} flexDirection="column" marginY={1}>
-                                <Text color="#FFB454"><Text color="#E8722C">❯ </Text>{anyMsg.content}</Text>
-                            </Box>
-                        );
-                    }
-                    if (anyMsg.type === 'function_call') {
-                        let parsedArgs = anyMsg.arguments;
-                        try {
-                            if (typeof parsedArgs === 'string') parsedArgs = JSON.parse(parsedArgs);
-                        } catch (e) { }
-                        return (
-                            <ToolExecutionView
-                                key={`msg-${index}`}
-                                name={anyMsg.name}
-                                args={parsedArgs}
-                                status="completed"
-                            />
-                        );
-                    }
-                    if (anyMsg.role === 'assistant' && typeof anyMsg.content === 'string' && anyMsg.content.trim()) {
-                        return (
-                            <Box key={`msg-${index}`} flexDirection="column" marginTop={1}>
-                                <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{renderMarkdown(anyMsg.content)}</Text>
-                            </Box>
-                        );
-                    }
-                    return null;
-                })}
-            </Box>
+            {
+                feed.map((item) => <FeedItemView key={item.id} item={item} />)
+            }
 
             {streamedResponse.trim() && (
                 <Box flexDirection="column" marginTop={1}>
@@ -275,18 +358,6 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 </Box>
             )}
 
-            {error && (
-                <Box flexDirection="column" marginY={1}>
-                    <Text color="red">✗ Error: {error}</Text>
-                </Box>
-            )}
-
-            {cancelled && (
-                <Box marginY={1}>
-                    <Text color="#ded3c5ff">⊘ Request cancelled.</Text>
-                </Box>
-            )}
-
             {permissionRequest && (
                 <PermissionPrompt
                     toolName={permissionRequest.tool.name}
@@ -294,11 +365,11 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     onResolve={permissionRequest.resolve}
                 />
             )}
-            <Box flexDirection="column" marginTop={1}>
+            {/* <Box flexDirection="column" marginTop={1}>
                 {commandOutput.map((output, index) => {
                     return <Text color="#FFB454" key={`command-${index}`}>{output}</Text>
                 })}
-            </Box>
+            </Box> */}
 
             <Box marginTop={1}>
                 <Text color="#FFB454">{model}</Text>
