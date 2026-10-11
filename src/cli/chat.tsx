@@ -7,47 +7,13 @@ import { SYSTEM_PROMPT } from "../agent/instructions.js";
 import type { ConversationItem, FunctionToolCall, TokenUsage } from "../llm/types.js";
 import { PermissionPrompt } from "./PermissionPrompt.js";
 import { ToolExecutionView } from "./ToolExecutionView.js";
-import { marked } from "marked";
-import { markedTerminal } from 'marked-terminal';
-import chalk from "chalk";
 import { abortConnection } from "../llm/generate.js";
 import { exit } from "node:process";
 import { getModel } from "../config/llm.js";
 import { getContextWindow } from "../config/models.js";
 import { commandRegistry } from "../commands/registry.js";
-
-marked.use(markedTerminal({
-    showSectionPrefix: false,
-    heading: chalk.bold,
-    firstHeading: chalk.bold,
-    strong: chalk.bold,
-    em: chalk.italic,
-    paragraph: chalk.reset,
-    listitem: chalk.reset,
-    blockquote: chalk.dim.italic,
-    codespan: chalk.hex('#FFB454'),
-    code: chalk.hex('#FFB454'),
-    link: chalk.hex('#FFB454'),
-    href: chalk.hex('#FFB454').underline,
-    del: chalk.hex('#8A8578').strikethrough,
-    hr: chalk.hex('#8A8578'),
-    tableOptions: {
-        style: {
-            head: [],
-            border: [],
-        },
-    },
-
-}) as any);
-
-const tokenFormatter = new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-});
-
-export function formatTokens(tokens: number): string {
-    return tokenFormatter.format(tokens);
-}
+import { formatTokens } from "./utils/formatTokens.js";
+import { renderMarkdown } from "./utils/markdown.js";
 
 const TextInput = _TextInput as any;
 
@@ -274,7 +240,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     if (anyMsg.role === 'assistant' && typeof anyMsg.content === 'string' && anyMsg.content.trim()) {
                         return (
                             <Box key={`msg-${index}`} flexDirection="column" marginTop={1}>
-                                <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{marked.parse(anyMsg.content).trim()}</Text>
+                                <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{renderMarkdown(anyMsg.content)}</Text>
                             </Box>
                         );
                     }
@@ -284,7 +250,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
             {streamedResponse.trim() && (
                 <Box flexDirection="column" marginTop={1}>
-                    <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{marked.parse(streamedResponse).trim()}</Text>
+                    <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{renderMarkdown(streamedResponse)}</Text>
                 </Box>
             )}
 
