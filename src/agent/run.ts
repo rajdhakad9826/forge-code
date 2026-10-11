@@ -34,7 +34,8 @@ export async function runAgent(conversation: ConversationItem[], contextWindow: 
     } catch (error) {
         if (error instanceof GenerationAbortedError)
             onCancelled?.();
-        onError(error instanceof Error ? error : new Error(String(error)));
+        else
+            onError(error instanceof Error ? error : new Error(String(error)));
     }
 
 }
