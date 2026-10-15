@@ -252,6 +252,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 return (
                     <Box flexDirection="column" marginY={1}>
                         <Text color="#8A8578"><Text color="#E8722C">❯ </Text>{item.command}</Text>
+                        <Box marginBottom={1}></Box>
                         {item.output.map((line, idx) => (
                             <Text color="#FFB454" key={idx}>{line}</Text>
                         ))}
