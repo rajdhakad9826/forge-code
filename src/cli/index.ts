@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { Command } from "commander";
 import { startChat } from "./chat.js";
 const program = new Command();
@@ -9,7 +8,7 @@ program
     .version('1.0.0');
 
 program
-    .command('chat')
+    .command('chat', { isDefault: true })
     .description('Send a prompt to the AI and print the response')
     .argument('[prompt]')
     .action(async (prompt) => startChat(prompt));
