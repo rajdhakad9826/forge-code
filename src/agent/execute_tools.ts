@@ -1,11 +1,11 @@
 import { toolRegistry } from "../tools/registry.js";
 import { askForPermission } from "./permissions.js";
 import type { ConversationItem, FunctionToolCall } from "../llm/types.js";
+import { ToolStatus } from "./types.js";
 
-export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionRequest: (tool: FunctionToolCall) => Promise<boolean>, onToolStart: (tool: FunctionToolCall) => void, onToolEnd: (call_id: string) => void) {
+export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionRequest: (tool: FunctionToolCall) => Promise<boolean>, onToolStart: (tool: FunctionToolCall) => void, onToolEnd: (call_id: string, status: ToolStatus) => void) {
     let toolOutputs: ConversationItem[] = [];
     for (let tool of toolCalls) {
-        let started = false;
         try {
             const args = JSON.parse(tool.arguments);
             const toolName = tool.name;
@@ -14,7 +14,6 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
                 throw new Error(`Tool "${toolName}" does not exist.`);
 
             onToolStart(tool)
-            started = true;
 
             const hasPermission = await askForPermission(tool, onPermissionRequest)
 
@@ -24,6 +23,7 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
                     call_id: tool.call_id,
                     output: "User denied permission to execute this tool. Tell the user what you need to do differently."
                 });
+                onToolEnd(tool.call_id, "denied")
                 continue;
             }
 
@@ -34,6 +34,9 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
                 call_id: tool.call_id,
                 output: toolResult
             });
+
+            onToolEnd(tool.call_id, "completed")
+
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             toolOutputs.push({
@@ -41,10 +44,7 @@ export async function execute_tools(toolCalls: FunctionToolCall[], onPermissionR
                 call_id: tool.call_id,
                 output: message
             })
-        } finally {
-            if (started) {
-                onToolEnd(tool.call_id);
-            }
+            onToolEnd(tool.call_id, "failed")
         }
     }
     return toolOutputs

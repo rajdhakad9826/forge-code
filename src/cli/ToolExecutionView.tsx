@@ -1,8 +1,8 @@
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
+import { ToolStatus } from "../agent/types.js";
 
-
-export function ToolExecutionView({ name, args, status }: { name: string, args: any, status: "running" | "completed" | "awaiting_permission" | "failed" }) {
+export function ToolExecutionView({ name, args, status }: { name: string, args: any, status: ToolStatus }) {
     const isWrite = name === 'write_file';
 
     let argsStr = "";
@@ -26,6 +26,7 @@ export function ToolExecutionView({ name, args, status }: { name: string, args: 
                 {status === "completed" && <Text color="#A3BE8C">  ✓  </Text>}
                 {status === "awaiting_permission" && <Text color="#EBCB8B">  ◍  </Text>}
                 {status === "failed" && <Text color="#BF616A">  ✗  </Text>}
+                {status === "denied" && <Text color="#D08770">  ⊘  </Text>}
                 <Text bold color="#F2F0EB">{name} </Text>
                 <Text color="#8A8578">{argsStr}</Text>
             </Box>

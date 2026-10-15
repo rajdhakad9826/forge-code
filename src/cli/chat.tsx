@@ -14,6 +14,7 @@ import { getContextWindow } from "../config/models.js";
 import { commandRegistry } from "../commands/registry.js";
 import { formatTokens } from "./utils/formatTokens.js";
 import { renderMarkdown } from "./utils/markdown.js";
+import { ToolStatus } from "../agent/types.js";
 
 const TextInput = _TextInput as any;
 
@@ -22,8 +23,6 @@ const logo = `
 █▀▀ █ █ █▀▄ █ █ █▀▀
 ▀   ▀▀▀ ▀ ▀ ▀▀▀ ▀▀▀
 `
-
-type ToolStatus = "running" | "awaiting_permission" | "completed" | "failed";
 
 type ToolExecution = {
     call_id: string;
@@ -144,6 +143,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
         setIsGenerating(false);
         setStreamedResponse("");
         setToolExecutions([]);
+        const toolStatuses = new Map<string, ToolStatus>();
 
         await runAgent(newLlmContext, modelContextWindow, {
             onGenerateStart: () => setIsGenerating(true),
@@ -157,14 +157,14 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
                 for (const item of newOutputs) {
                     const anyItem = item as any;
-                    if ((anyItem as any).type === "function_call") {
+                    if (anyItem.type === "function_call") {
                         setFeed(prev => [...prev, {
-                            id: (item as any).call_id,
+                            id: anyItem.call_id,
                             type: "tool_execution",
-                            callId: (item as any).call_id,
-                            name: (item as any).name,
-                            args: JSON.parse((item as any).arguments || "{}"),
-                            status: "completed"
+                            callId: anyItem.call_id,
+                            name: anyItem.name,
+                            args: JSON.parse(anyItem.arguments || "{}"),
+                            status: toolStatuses.get(anyItem.call_id) ?? "completed"
                         }]);
                     } else if (anyItem.role === "assistant" && typeof anyItem.content === "string" && anyItem.content.trim()) {
                         setFeed(prev => [...prev, {
@@ -203,7 +203,8 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     }
                 ]);
             },
-            onToolEnd: (call_id) => {
+            onToolEnd: (call_id, status) => {
+                toolStatuses.set(call_id, status)
                 setToolExecutions(prev =>
                     prev.filter(tool => tool.call_id !== call_id)
                 );
