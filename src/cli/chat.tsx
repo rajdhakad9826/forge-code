@@ -366,11 +366,6 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                     onResolve={permissionRequest.resolve}
                 />
             )}
-            {/* <Box flexDirection="column" marginTop={1}>
-                {commandOutput.map((output, index) => {
-                    return <Text color="#FFB454" key={`command-${index}`}>{output}</Text>
-                })}
-            </Box> */}
 
             <Box marginTop={1}>
                 <Text color="#FFB454">{model}</Text>
