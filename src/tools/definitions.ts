@@ -7,10 +7,14 @@ function buildToolDefinitions(toolRegistry: ToolRegistry) {
     for (let tool in toolRegistry) {
 
         const properties: Record<string, any> = {};
+        const required: string[] = [];
 
         if (toolRegistry[tool].parameters) {
             const parameters = toolRegistry[tool].parameters;
             parameters.forEach((parameter) => {
+                if (parameter.required == true)
+                    required.push(parameter.name)
+
                 properties[parameter.name] = {
                     type: parameter.type,
                     description: parameter.description
@@ -18,8 +22,6 @@ function buildToolDefinitions(toolRegistry: ToolRegistry) {
             })
 
         }
-
-        const required = Object.keys(properties);
 
         tools.push({
             type: "function" as const,

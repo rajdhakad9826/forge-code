@@ -4,6 +4,7 @@ export type ToolParameter = {
     name: string;
     type: string;
     description: string;
+    required: boolean
 };
 
 export type Tool = {

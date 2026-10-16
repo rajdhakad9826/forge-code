@@ -17,7 +17,8 @@ export const toolRegistry: ToolRegistry = {
             {
                 name: "path",
                 type: "string",
-                description: "The relative or absolute path of the file to read."
+                description: "The relative or absolute path of the file to read.",
+                required: true
             }
         ],
         callback: read_file,
@@ -29,12 +30,14 @@ export const toolRegistry: ToolRegistry = {
             {
                 name: "content",
                 type: "string",
-                description: "The complete text content to write to the file."
+                description: "The complete text content to write to the file.",
+                required: true
             },
             {
                 name: "path",
                 type: "string",
-                description: "The relative or absolute path of the file to write."
+                description: "The relative or absolute path of the file to write.",
+                required: true
             }
         ],
         callback: write_file,
@@ -46,7 +49,8 @@ export const toolRegistry: ToolRegistry = {
             {
                 name: "path",
                 type: "string",
-                description: "The relative or absolute path of the directory to list. Defaults to the current working directory."
+                description: "The relative or absolute path of the directory to list. Defaults to the current working directory.",
+                required: true
             }
         ],
         callback: list_directory,
@@ -58,7 +62,8 @@ export const toolRegistry: ToolRegistry = {
             {
                 name: "command",
                 type: "string",
-                description: "The shell command to execute."
+                description: "The shell command to execute.",
+                required: true
             },
         ],
         callback: execute_shell,
