@@ -12,13 +12,25 @@ export const toolRegistry: ToolRegistry = {
         requiresPermission: false
     },
     read_file: {
-        description: "Read the complete UTF-8 text contents of a file from the current workspace. Returns the file contents as a string.",
+        description: "Reads a file from the local filesystem. Returns file contents as a string with each line prefixed by its 1-based line number and a tab. The line number prefixes are for reference only and are not part of the file content. Optionally specify a line range for large files.",
         parameters: [
             {
                 name: "path",
                 type: "string",
                 description: "The relative or absolute path of the file to read.",
                 required: true
+            },
+            {
+                name: "start_line",
+                type: "integer",
+                description: "The 1-based line number to start reading from. Defaults to the start of the file.",
+                required: false
+            },
+            {
+                name: "end_line",
+                type: "integer",
+                description: "The 1-based line number to stop reading at, inclusive. Defaults to the end of the file.",
+                required: false
             }
         ],
         callback: read_file,
