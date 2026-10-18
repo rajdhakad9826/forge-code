@@ -34,7 +34,13 @@ export const PermissionPrompt = ({ toolName, args, onResolve }: { toolName: stri
     } else if (toolName === "write_file") {
         title = "Write file";
         subtitle = args.path;
-        content = args.content ? `+ ${args.content}` : "";
+        if (args.content) {
+            const lines: string[] = args.content.split(/\r?\n/);
+            const width = String(lines.length).length;
+            content = lines.map((line, i) => `${String(i + 1).padStart(width)} ${line}`).join("\n")
+        } else {
+            content = ""
+        }
     } else {
         title = toolName;
         content = JSON.stringify(args, null, 2);
