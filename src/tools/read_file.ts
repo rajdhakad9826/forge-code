@@ -15,6 +15,8 @@ export async function read_file({ path, start_line, end_line }: { path: string; 
         const filePath = pathModule.resolve(process.cwd(), path)
         let content = await fs.readFile(filePath, 'utf8')
 
+        if (content === "") return "(empty file)"
+
         const lines = content.split(/\r?\n/)
 
         const total = lines.length
