@@ -1,6 +1,6 @@
 let modelOverride: string | undefined;
 const MODEL = process.env.MODEL
-const DEFAULT_MODEL: string = "inclusionai/ling-3.0-flash-vl:free"
+const DEFAULT_MODEL: string = "openrouter/free"
 
 export function setModelOverride(model: string) {
     modelOverride = model;
