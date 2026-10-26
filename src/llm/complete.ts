@@ -1,8 +1,10 @@
 import { getModel } from "../config/llm.js"
-import { client } from "./client.js"
+import { getClient } from "./client.js"
 import { ConversationItem } from "./types.js"
 
+
 export async function complete(prompt: string, systemPrompt: string = "You are a precise assistant. Respond only with the requested output — no preamble, no explanation, no formatting unless asked.") {
+    const client = getClient();
     const messages: ConversationItem[] = [
         {
             role: "system",

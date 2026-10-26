@@ -1,9 +1,10 @@
-import { client } from "./client.js";
+import { getClient } from "./client.js";
 import { ConversationItem, FunctionToolCall, GenerationAbortedError, TokenUsage } from "./types.js";
 import { toolDefinitions } from "../tools/definitions.js";
 import { getModel } from "../config/llm.js";
 import OpenAI from "openai";
 import { estimateConversationTokens } from "./tokens.js";
+
 
 let controller: AbortController | null = null;
 
@@ -13,6 +14,7 @@ export function abortConnection() {
 
 export async function generate(conversation: ConversationItem[], onTextDelta: (delta: string) => void, onUsage: (usage: TokenUsage) => void): Promise<ConversationItem[]> {
     controller = new AbortController();
+    const client = getClient();
     try {
         const stream = await client.responses.create({
             model: getModel(),
