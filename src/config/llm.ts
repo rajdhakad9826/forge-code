@@ -1,11 +1,17 @@
+import { readUserConfig, writeModelToConfig } from "./auth.js";
+
 let modelOverride: string | undefined;
-const MODEL = process.env.MODEL
-const DEFAULT_MODEL: string = "openrouter/free"
+const DEFAULT_MODEL: string = "openrouter/free";
 
 export function setModelOverride(model: string) {
     modelOverride = model;
 }
 
 export function getModel() {
-    return modelOverride ?? MODEL ?? DEFAULT_MODEL;
+    const configModel = readUserConfig().model;
+    return modelOverride ?? configModel ?? DEFAULT_MODEL;
+}
+
+export function saveModelToConfig(model: string) {
+    writeModelToConfig(model);
 }

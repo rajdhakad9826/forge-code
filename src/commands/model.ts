@@ -1,16 +1,27 @@
-import { getModel, setModelOverride } from "../config/llm.js";
+import { getModel, saveModelToConfig, setModelOverride } from "../config/llm.js";
 import { getContextWindow, ModelNotFoundError } from "../config/models.js";
 
-export async function model(model: string, ctx: { setModel: (arg0: any) => void; setModelContextWindow: (arg0: number) => void; }): Promise<string[]> {
-    if (!model) return [`Current model: ${getModel()}`];
+export async function model(args: string, ctx: { setModel: (arg0: any) => void; setModelContextWindow: (arg0: number) => void; }): Promise<string[]> {
+    const parts = args.trim().split(/\s+/);
+    const saveFlag = parts.includes("--save");
+    const modelName = parts.filter(p => p !== "--save").join(" ");
+
+    if (!modelName) return [`Current model: ${getModel()}`];
+
     try {
-        const contextWindow = await getContextWindow(model);
-        setModelOverride(model);
-        ctx.setModel(model);
+        const contextWindow = await getContextWindow(modelName);
+        setModelOverride(modelName);
+        ctx.setModel(modelName);
         ctx.setModelContextWindow(contextWindow);
-        return [`Switched to ${model}`];
+
+        if (saveFlag) {
+            saveModelToConfig(modelName);
+            return [`Switched to ${modelName} (saved to config)`];
+        }
+
+        return [`Switched to ${modelName}`];
     } catch (error) {
-        if (error instanceof ModelNotFoundError) return [`Model '${model}' not found`];
+        if (error instanceof ModelNotFoundError) return [`Model '${modelName}' not found`];
         return [`Could not switch model: ${error instanceof Error ? error.message : error}`];
     }
 }

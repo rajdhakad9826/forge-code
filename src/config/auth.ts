@@ -37,6 +37,13 @@ export function saveApiKey(apiKey: string) {
     writeFileSync(CONFIG_FILE, JSON.stringify({ ...current, openrouter_api_key: apiKey }, null, 2));
 }
 
+export function writeModelToConfig(model: string) {
+    if (!existsSync(CONFIG_DIR))
+        mkdirSync(CONFIG_DIR, { recursive: true });
+    const current = readUserConfig();
+    writeFileSync(CONFIG_FILE, JSON.stringify({ ...current, model }, null, 2));
+}
+
 export function deleteApiKey() {
     if (!existsSync(CONFIG_FILE))
         return;
