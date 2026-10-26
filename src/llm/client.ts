@@ -1,6 +1,4 @@
 import OpenAI from "openai";
-import dotenv from "dotenv";
-dotenv.config();
 import { resolveApiKey } from "../config/auth.js";
 
 export function getClient() {
