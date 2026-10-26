@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { render, Box, Text, useInput, Static } from "ink";
+import { render, Box, Text, useInput, Static, usePaste } from "ink";
 import _TextInput from "ink-text-input";
 import Spinner from "ink-spinner";
 import { runAgent } from "../agent/run.js";
@@ -15,6 +15,7 @@ import { commandRegistry } from "../commands/registry.js";
 import { formatTokens } from "./utils/formatTokens.js";
 import { renderMarkdown } from "./utils/markdown.js";
 import { ToolStatus } from "../agent/types.js";
+import { resolveApiKey, saveApiKey } from "../config/auth.js";
 
 const TextInput = _TextInput as any;
 
@@ -71,8 +72,99 @@ export type FeedItem =
 
 type TurnState = "idle" | "active";
 
-const App = ({ initialPrompt }: { initialPrompt?: string }) => {
+const ApiKeyPrompt = ({ onDone }: { onDone: () => void }) => {
+    const [apiKey, setApiKey] = useState("");
+    const [error, setError] = useState("");
 
+    usePaste((text) => {
+        setApiKey((prev) => prev + text);
+    });
+
+    const handleSubmit = (val: string) => {
+        const trimmed = val.trim();
+        if (!trimmed) {
+            setError("API key cannot be empty. Please enter your OpenRouter API key.");
+            return;
+        }
+        saveApiKey(trimmed);
+        onDone();
+    };
+
+    return (
+        <Box flexDirection="column" paddingX={2} paddingY={1}>
+            <Box
+                borderStyle="round"
+                borderColor="#E8722C"
+                padding={1}
+                paddingX={2}
+                flexDirection="column"
+                marginBottom={1}
+            >
+                <Box flexDirection="row" justifyContent="center" marginBottom={1}>
+                    <Text bold color="#E8722C">{logo.trim()}</Text>
+                </Box>
+
+                <Box flexDirection="column" alignItems="center" marginBottom={1}>
+                    <Text bold color="#F2F0EB">Welcome to Forge Code!</Text>
+                    <Text color="#8A8578">agent for your terminal</Text>
+                </Box>
+
+                <Box
+                    borderStyle="single"
+                    borderColor="#E8722C"
+                    borderLeft={false}
+                    borderRight={false}
+                    borderBottom={false}
+                    marginY={1}
+                />
+
+                <Box flexDirection="column" marginBottom={1}>
+                    <Text bold color="#F2F0EB">OpenRouter API Key Required</Text>
+                    <Text color="#8A8578">
+                        Get your free API key at{" "}
+                        <Text color="#E8722C">openrouter.ai/keys</Text>
+                    </Text>
+                    <Text color="#8A8578">
+                        Your key is saved locally at{" "}
+                        <Text color="#FFB454">~/.config/forge-code/config.json</Text>
+                    </Text>
+                </Box>
+
+                <Box borderStyle="round" borderColor="#8A8578" paddingX={1}>
+                    <Text color="#E8722C">🔑 </Text>
+                    <TextInput
+                        value={apiKey}
+                        onChange={setApiKey}
+                        onSubmit={handleSubmit}
+                        mask="*"
+                        placeholder="sk-or-..."
+                    />
+                </Box>
+
+                {error ? (
+                    <Box marginTop={1}>
+                        <Text color="#BF616A">✗ {error}</Text>
+                    </Box>
+                ) : (
+                    <Box marginTop={1}>
+                        <Text color="#8A8578">Press </Text>
+                        <Text color="#FFB454">Enter</Text>
+                        <Text color="#8A8578"> to save and continue</Text>
+                    </Box>
+                )}
+            </Box>
+        </Box>
+    );
+}
+
+const Root = ({ initialPrompt }: { initialPrompt?: string }) => {
+    const [ready, setReady] = useState(() => resolveApiKey() !== undefined);
+    if (!ready) return <ApiKeyPrompt onDone={() => setReady(true)} />;
+    return <App initialPrompt={initialPrompt} />;
+};
+
+
+const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     useInput((input, key) => {
         if (key.ctrl && input === 'c')
             abortConnection();
@@ -99,6 +191,12 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
         outputTokens: 0,
         total: 0
     })
+
+    usePaste((text) => {
+        if (turnState === "idle" && !permissionRequest) {
+            setInput((prev) => prev + text);
+        }
+    });
 
     const handleCommand = async (input: string) => {
         const [name, ...args] = input.slice(1).trim().split(/\s+/);
@@ -399,6 +497,6 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 };
 
 export async function startChat(initialPrompt?: string) {
-    const { waitUntilExit } = render(<App initialPrompt={initialPrompt} />, { exitOnCtrlC: false });
+    const { waitUntilExit } = render(<Root initialPrompt={initialPrompt} />, { exitOnCtrlC: false });
     await waitUntilExit();
 }
