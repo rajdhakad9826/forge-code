@@ -1,6 +1,7 @@
 export type CommandContext = {
     setModel: (name: string) => void;
-    setModelContextWindow: (size: number) => void
+    setModelContextWindow: (size: number) => void;
+    showApiKeyPrompt: () => void;
 };
 
 

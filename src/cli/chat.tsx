@@ -157,14 +157,11 @@ const ApiKeyPrompt = ({ onDone }: { onDone: () => void }) => {
     );
 }
 
-const Root = ({ initialPrompt }: { initialPrompt?: string }) => {
-    const [ready, setReady] = useState(() => resolveApiKey() !== undefined);
-    if (!ready) return <ApiKeyPrompt onDone={() => setReady(true)} />;
-    return <App initialPrompt={initialPrompt} />;
-};
-
 
 const App = ({ initialPrompt }: { initialPrompt?: string }) => {
+    const [ready, setReady] = useState(() => resolveApiKey() !== undefined);
+    const showApiKeyPrompt = () => setReady(false);
+
     useInput((input, key) => {
         if (key.ctrl && input === 'c')
             abortConnection();
@@ -193,7 +190,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     })
 
     usePaste((text) => {
-        if (turnState === "idle" && !permissionRequest) {
+        if (ready && turnState === "idle" && !permissionRequest) {
             setInput((prev) => prev + text);
         }
     });
@@ -213,7 +210,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
         try {
             const output = await command.callback(
                 args.join(" "),
-                { setModel, setModelContextWindow }
+                { setModel, setModelContextWindow, showApiKeyPrompt }
             );
 
             setFeed(prev => [
@@ -390,7 +387,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
     }
 
 
-    return (
+    return ready ? (
         <Box flexDirection="column" paddingX={1}>
 
             <Box
@@ -493,10 +490,12 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
             }
 
         </Box >
+    ) : (
+        <ApiKeyPrompt onDone={() => setReady(true)} />
     );
 };
 
 export async function startChat(initialPrompt?: string) {
-    const { waitUntilExit } = render(<Root initialPrompt={initialPrompt} />, { exitOnCtrlC: false });
+    const { waitUntilExit } = render(<App initialPrompt={initialPrompt} />, { exitOnCtrlC: false });
     await waitUntilExit();
 }

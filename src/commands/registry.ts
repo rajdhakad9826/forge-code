@@ -1,3 +1,4 @@
+import { auth } from "./auth.js";
 import { help } from "./help.js";
 import { model } from "./model.js";
 import { quit } from "./quit.js";
@@ -16,7 +17,12 @@ export const commandRegistry: Record<string, Command> = {
     },
     model: {
         name: "model",
-        description: "Switch to another one: /model <name>.",
+        description: "Switch to another one: /model <name> [--save].",
         callback: model
+    },
+    auth: {
+        name: "auth",
+        description: "Manage authentication: /auth <login|logout|status>.",
+        callback: auth
     }
 }
