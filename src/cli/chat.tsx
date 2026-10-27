@@ -16,6 +16,8 @@ import { formatTokens } from "./utils/formatTokens.js";
 import { renderMarkdown } from "./utils/markdown.js";
 import { ToolStatus } from "../agent/types.js";
 import { resolveApiKey, saveApiKey } from "../config/auth.js";
+import { FeedItem } from "./types.js";
+import { FeedItemView } from "./components/FeedItemView.js";
 
 const TextInput = _TextInput as any;
 
@@ -31,44 +33,6 @@ type ToolExecution = {
     args: any;
     status: ToolStatus;
 };
-
-export type FeedItem =
-    | {
-        id: string;
-        type: "user";
-        content: string;
-    }
-    | {
-        id: string;
-        type: "assistant";
-        content: string;
-    }
-    | {
-        id: string;
-        type: "command";
-        command: string;
-        output: string[];
-    }
-    | {
-        id: string;
-        type: "tool_execution";
-        callId: string;
-        name: string;
-        args: any;
-        status: ToolStatus;
-        result?: string;
-    }
-    | {
-        id: string;
-        type: "notice";
-        kind: "cancelled" | "info" | "warning";
-        message: string;
-    }
-    | {
-        id: string;
-        type: "error";
-        message: string;
-    };
 
 type TurnState = "idle" | "active";
 
@@ -333,58 +297,6 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
                 setModelContextWindow(8000);
             });
     }, []);
-
-    function FeedItemView({ item }: { item: FeedItem }) {
-        switch (item.type) {
-            case "user":
-                return (
-                    <Box marginY={1}>
-                        <Text color="#FFB454"><Text color="#E8722C">❯ </Text>{item.content}</Text>
-                    </Box>
-                );
-
-            case "command":
-                return (
-                    <Box flexDirection="column" marginY={1}>
-                        <Text color="#8A8578"><Text color="#E8722C">❯ </Text>{item.command}</Text>
-                        <Box marginBottom={1}></Box>
-                        {item.output.map((line, idx) => (
-                            <Text color="#FFB454" key={idx}>{line}</Text>
-                        ))}
-                    </Box>
-                );
-
-            case "assistant":
-                return (
-                    <Box flexDirection="column" marginTop={1}>
-                        <Text color="#F2F0EB"><Text color="#E8722C">⚒ </Text>{renderMarkdown(item.content)}</Text>
-                    </Box>
-                );
-
-            case "tool_execution":
-                return (
-                    <ToolExecutionView
-                        name={item.name}
-                        args={item.args}
-                        status={item.status}
-                    />
-                );
-
-            case "notice":
-                return (
-                    <Box marginY={1}>
-                        <Text color="#ded3c5ff">{item.message}</Text>
-                    </Box>
-                );
-
-            case "error":
-                return (
-                    <Box flexDirection="column" marginY={1}>
-                        <Text color="#BF616A">✗ Error: {item.message}</Text>
-                    </Box>
-                );
-        }
-    }
 
 
     return ready ? (
