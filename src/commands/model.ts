@@ -1,7 +1,8 @@
 import { getModel, saveModelToConfig, setModelOverride } from "../config/llm.js";
 import { getContextWindow, ModelNotFoundError } from "../config/models.js";
+import { CommandContext } from "./types.js";
 
-export async function model(args: string, ctx: { setModel: (arg0: any) => void; setModelContextWindow: (arg0: number) => void; }): Promise<string[]> {
+export async function model(args: string, ctx: CommandContext): Promise<string[]> {
     const parts = args.trim().split(/\s+/);
     const saveFlag = parts.includes("--save");
     const modelName = parts.filter(p => p !== "--save").join(" ");
