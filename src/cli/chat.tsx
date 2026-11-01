@@ -287,7 +287,7 @@ const App = ({ initialPrompt }: { initialPrompt?: string }) => {
 
             <Box marginTop={1}>
                 <Text color="#FFB454">{model}</Text>
-                <Text color="#8A8578"> · {formatTokens(tokenUsage.total)}/{formatTokens(modelContextWindow)} ({(tokenUsage.total / modelContextWindow * 100).toFixed(2)}%)</Text>
+                <Text color="#8A8578"> · {formatTokens(tokenUsage.total)}/{formatTokens(modelContextWindow)} ({((tokenUsage.total / modelContextWindow * 100) || 0).toFixed(2)}%)</Text>
             </Box>
             {
                 !permissionRequest && (
