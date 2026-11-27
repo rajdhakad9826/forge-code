@@ -41,7 +41,7 @@ It uses [OpenRouter](https://openrouter.ai/) to connect to any supported LLM (GP
 ### Clone and install
 
 ```bash
-git clone https://github.com/your-username/forge-code.git
+git clone https://github.com/rajdhakad9826/forge-code.git
 cd forge-code
 npm install
 ```
